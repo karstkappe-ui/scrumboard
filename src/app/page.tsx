@@ -30,7 +30,7 @@ export default function DashboardPage() {
     <div className="flex flex-col h-full overflow-hidden">
       <Header
         title="Dashboard"
-        subtitle={`Good morning, David · ${today}`}
+        subtitle={`Good morning, Karst · ${today}`}
       />
 
       <div className="flex-1 overflow-y-auto p-6 scrollbar-thin">

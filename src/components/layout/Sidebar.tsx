@@ -26,7 +26,7 @@ const NAV_ITEMS = [
 export function Sidebar() {
   const pathname = usePathname();
   const { isSidebarCollapsed, toggleSidebar } = useUIStore();
-  const currentUser = MOCK_USERS[4];
+  const currentUser = MOCK_USERS[0];
 
   return (
     <aside

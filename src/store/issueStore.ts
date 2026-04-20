@@ -57,7 +57,7 @@ export const useIssueStore = create<IssueStore>()(
           status: input.status,
           priority: input.priority,
           assigneeId: input.assigneeId,
-          reporterId: 'user-5',
+          reporterId: 'user-1',
           sprintId: input.sprintId,
           epicId: input.epicId,
           parentId: input.parentId,
@@ -73,7 +73,7 @@ export const useIssueStore = create<IssueStore>()(
           issues: { ...state.issues, [newIssue.id]: newIssue },
           issueCounter: state.issueCounter + 1,
         }));
-        get().logActivity({ issueId: newIssue.id, userId: 'user-5', action: 'issue_created' });
+        get().logActivity({ issueId: newIssue.id, userId: 'user-1', action: 'issue_created' });
         return newIssue;
       },
 
@@ -88,7 +88,7 @@ export const useIssueStore = create<IssueStore>()(
             },
           };
         });
-        get().logActivity({ issueId: id, userId: 'user-5', action: 'issue_updated' });
+        get().logActivity({ issueId: id, userId: 'user-1', action: 'issue_updated' });
       },
 
       deleteIssue: (id) => {
@@ -96,7 +96,7 @@ export const useIssueStore = create<IssueStore>()(
           const { [id]: _removed, ...rest } = state.issues;
           return { issues: rest };
         });
-        get().logActivity({ issueId: id, userId: 'user-5', action: 'issue_deleted' });
+        get().logActivity({ issueId: id, userId: 'user-1', action: 'issue_deleted' });
       },
 
       moveIssueToStatus: (id, status) => {
@@ -110,7 +110,7 @@ export const useIssueStore = create<IssueStore>()(
         }));
         get().logActivity({
           issueId: id,
-          userId: 'user-5',
+          userId: 'user-1',
           action: 'issue_moved',
           field: 'status',
           oldValue: existing.status,

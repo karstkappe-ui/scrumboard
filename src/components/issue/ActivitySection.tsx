@@ -31,7 +31,7 @@ export function ActivitySection({ issueId }: ActivitySectionProps) {
 
   const handleSubmitComment = () => {
     if (!newComment.trim()) return;
-    addComment(issueId, 'user-5', newComment.trim());
+    addComment(issueId, 'user-1', newComment.trim());
     setNewComment('');
   };
 
@@ -63,7 +63,7 @@ export function ActivitySection({ issueId }: ActivitySectionProps) {
 
         {/* Add comment */}
         <div className="flex gap-2 mt-3">
-          <Avatar user={MOCK_USERS[4]} size="sm" className="flex-shrink-0 mt-0.5" />
+          <Avatar user={MOCK_USERS[0]} size="sm" className="flex-shrink-0 mt-0.5" />
           <div className="flex-1">
             <textarea
               value={newComment}

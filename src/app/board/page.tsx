@@ -20,10 +20,8 @@ export default function BoardPage() {
 
   const project = getActiveProject();
   const activeSprintId = project ? getActiveSprintId(project.id) : undefined;
-  const sprint = activeSprintId
-    ? getSprintById(activeSprintId)
-    : project
-    ? getActiveSprint(project.id)
+  const sprint = project
+    ? (activeSprintId ? getSprintById(activeSprintId) : undefined) ?? getActiveSprint(project.id)
     : undefined;
 
   return (

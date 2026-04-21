@@ -1,12 +1,13 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useState } from 'react';
 import {
   LayoutDashboard,
   List,
   Columns3,
   Zap,
-  Settings,
+  KeyRound,
   ChevronLeft,
   ChevronRight,
   LogOut,
@@ -16,6 +17,7 @@ import { useUIStore } from '@/store/uiStore';
 import { MOCK_USERS } from '@/data/users';
 import { Avatar } from '@/components/ui/Avatar';
 import { ProjectSwitcher } from './ProjectSwitcher';
+import { ChangePasswordModal } from './ChangePasswordModal';
 import { signOut } from 'next-auth/react';
 
 const NAV_ITEMS = [
@@ -29,6 +31,7 @@ export function Sidebar() {
   const pathname = usePathname();
   const { isSidebarCollapsed, toggleSidebar, currentUserId } = useUIStore();
   const currentUser = MOCK_USERS.find((u) => u.id === currentUserId) ?? MOCK_USERS[0];
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
 
   return (
     <aside
@@ -95,6 +98,15 @@ export function Sidebar() {
         </div>
         {!isSidebarCollapsed && (
           <button
+            onClick={() => setShowPasswordModal(true)}
+            className="w-full flex items-center gap-2 rounded-md px-2 py-1.5 text-xs text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-colors"
+          >
+            <KeyRound size={13} className="text-gray-400 flex-shrink-0" />
+            <span>Wachtwoord wijzigen</span>
+          </button>
+        )}
+        {!isSidebarCollapsed && (
+          <button
             onClick={() => signOut({ callbackUrl: '/login' })}
             className="w-full flex items-center gap-2 rounded-md px-2 py-1.5 text-xs text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-colors"
           >
@@ -102,6 +114,7 @@ export function Sidebar() {
             <span>Uitloggen</span>
           </button>
         )}
+        {showPasswordModal && <ChangePasswordModal onClose={() => setShowPasswordModal(false)} />}
         <button
           onClick={toggleSidebar}
           className="w-full flex items-center justify-center rounded-md p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"

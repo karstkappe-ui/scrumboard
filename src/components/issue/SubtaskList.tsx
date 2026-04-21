@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { Plus, Check } from 'lucide-react';
 import { useIssueStore } from '@/store/issueStore';
+import { useProjectStore } from '@/store/projectStore';
 import { IssueTypeIcon } from '@/components/ui/IssueTypeIcon';
 import { Avatar } from '@/components/ui/Avatar';
 import { MOCK_USERS } from '@/data/users';
@@ -13,20 +14,24 @@ interface SubtaskListProps {
 
 export function SubtaskList({ parentId }: SubtaskListProps) {
   const { getSubtasks, moveIssueToStatus, createIssue } = useIssueStore();
+  const { getActiveProject } = useProjectStore();
   const [adding, setAdding] = useState(false);
   const [newTitle, setNewTitle] = useState('');
 
   const subtasks = getSubtasks(parentId);
   const done = subtasks.filter((s) => s.status === 'done').length;
+  const project = getActiveProject();
 
   const handleAddSubtask = () => {
-    if (!newTitle.trim()) return;
+    if (!newTitle.trim() || !project) return;
     createIssue({
       title: newTitle.trim(),
       type: 'subtask',
       priority: 'medium',
       status: 'todo',
       parentId,
+      projectId: project.id,
+      projectKey: project.key,
     });
     setNewTitle('');
     setAdding(false);

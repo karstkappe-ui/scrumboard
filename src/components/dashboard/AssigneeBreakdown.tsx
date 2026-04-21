@@ -1,14 +1,17 @@
 'use client';
 import { useIssueStore } from '@/store/issueStore';
 import { useSprintStore } from '@/store/sprintStore';
+import { useProjectStore } from '@/store/projectStore';
 import { MOCK_USERS } from '@/data/users';
 import { Avatar } from '@/components/ui/Avatar';
 
 export function AssigneeBreakdown() {
   const { getIssuesBySprint } = useIssueStore();
   const { getActiveSprint } = useSprintStore();
+  const { getActiveProject } = useProjectStore();
 
-  const sprint = getActiveSprint();
+  const project = getActiveProject();
+  const sprint = project ? getActiveSprint(project.id) : undefined;
   const issues = sprint ? getIssuesBySprint(sprint.id) : [];
 
   const data = MOCK_USERS.map((user) => {
@@ -34,18 +37,12 @@ export function AssigneeBreakdown() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-xs font-medium text-gray-700 truncate">{user.name}</span>
-                  <span className="text-xs text-gray-400 flex-shrink-0 ml-2">
-                    {done}/{total}
-                  </span>
+                  <span className="text-xs text-gray-400 flex-shrink-0 ml-2">{done}/{total}</span>
                 </div>
                 <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
                   <div
                     className="h-full rounded-full"
-                    style={{
-                      width: `${(total / maxTotal) * 100}%`,
-                      backgroundColor: user.color,
-                      opacity: 0.7,
-                    }}
+                    style={{ width: `${(total / maxTotal) * 100}%`, backgroundColor: user.color, opacity: 0.7 }}
                   />
                 </div>
               </div>

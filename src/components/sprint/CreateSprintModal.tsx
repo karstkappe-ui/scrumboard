@@ -10,9 +10,10 @@ interface CreateSprintModalProps {
   open: boolean;
   onClose: () => void;
   editSprint?: Sprint;
+  projectId: string;
 }
 
-export function CreateSprintModal({ open, onClose, editSprint }: CreateSprintModalProps) {
+export function CreateSprintModal({ open, onClose, editSprint, projectId }: CreateSprintModalProps) {
   const { createSprint, updateSprint } = useSprintStore();
   const isEditing = !!editSprint;
 
@@ -26,7 +27,7 @@ export function CreateSprintModal({ open, onClose, editSprint }: CreateSprintMod
     if (isEditing) {
       updateSprint(editSprint!.id, data);
     } else {
-      createSprint(data);
+      createSprint({ ...data, projectId });
     }
     reset();
     onClose();

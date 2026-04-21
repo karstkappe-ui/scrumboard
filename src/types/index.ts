@@ -1,3 +1,14 @@
+export interface Project {
+  id: string;
+  name: string;
+  key: string;
+  description?: string;
+  color: string;
+  emoji: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export type IssueType = 'epic' | 'story' | 'task' | 'bug' | 'subtask';
 export type Priority = 'low' | 'medium' | 'high' | 'urgent';
 export type IssueStatus = 'backlog' | 'todo' | 'in_progress' | 'review' | 'done';

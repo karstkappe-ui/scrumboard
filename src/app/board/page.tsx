@@ -1,8 +1,9 @@
 'use client';
 import { useState } from 'react';
-import { Plus } from 'lucide-react';
+import { Plus, Columns3 } from 'lucide-react';
 import { useUIStore } from '@/store/uiStore';
 import { useSprintStore } from '@/store/sprintStore';
+import { useProjectStore } from '@/store/projectStore';
 import { Header } from '@/components/layout/Header';
 import { SprintHeader } from '@/components/board/SprintHeader';
 import { BoardFilters } from '@/components/board/BoardFilters';
@@ -10,44 +11,40 @@ import { KanbanBoard } from '@/components/board/KanbanBoard';
 import { CreateIssueModal } from '@/components/backlog/CreateIssueModal';
 import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { Columns3 } from 'lucide-react';
 
 export default function BoardPage() {
-  const { activeSprintId } = useUIStore();
-  const { getSprintById } = useSprintStore();
+  const { getActiveSprint: getActiveSprintId } = useUIStore();
+  const { getSprintById, getActiveSprint } = useSprintStore();
+  const { getActiveProject } = useProjectStore();
   const [createOpen, setCreateOpen] = useState(false);
 
-  const sprint = activeSprintId ? getSprintById(activeSprintId) : undefined;
+  const project = getActiveProject();
+  const activeSprintId = project ? getActiveSprintId(project.id) : undefined;
+  const sprint = activeSprintId
+    ? getSprintById(activeSprintId)
+    : project
+    ? getActiveSprint(project.id)
+    : undefined;
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <Header
-        title="Sprint Board"
+        title={project ? `${project.emoji} ${project.name} — Board` : 'Board'}
         subtitle={sprint?.name ?? 'No active sprint'}
         actions={
-          <Button
-            variant="primary"
-            size="sm"
-            leftIcon={<Plus size={14} />}
-            onClick={() => setCreateOpen(true)}
-          >
+          <Button variant="primary" size="sm" leftIcon={<Plus size={14} />} onClick={() => setCreateOpen(true)}>
             Add Issue
           </Button>
         }
       />
 
       <div className="flex-1 overflow-hidden flex flex-col p-4 gap-4">
-        {/* Sprint header bar */}
         {sprint ? (
           <>
             <SprintHeader />
-
-            {/* Filters */}
             <div className="flex-shrink-0">
               <BoardFilters />
             </div>
-
-            {/* Board */}
             <div className="flex-1 overflow-x-auto overflow-y-hidden scrollbar-thin">
               <KanbanBoard sprintId={sprint.id} />
             </div>
@@ -61,11 +58,15 @@ export default function BoardPage() {
         )}
       </div>
 
-      <CreateIssueModal
-        open={createOpen}
-        onClose={() => setCreateOpen(false)}
-        defaultSprintId={activeSprintId ?? undefined}
-      />
+      {project && (
+        <CreateIssueModal
+          open={createOpen}
+          onClose={() => setCreateOpen(false)}
+          defaultSprintId={sprint?.id}
+          projectId={project.id}
+          projectKey={project.key}
+        />
+      )}
     </div>
   );
 }

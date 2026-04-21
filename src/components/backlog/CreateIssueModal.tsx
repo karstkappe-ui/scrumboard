@@ -3,7 +3,6 @@ import { useForm } from 'react-hook-form';
 import { useIssueStore } from '@/store/issueStore';
 import { useSprintStore } from '@/store/sprintStore';
 import { MOCK_USERS } from '@/data/users';
-import { MOCK_LABELS } from '@/data/labels';
 import { ISSUE_TYPES, PRIORITIES, STORY_POINTS, ISSUE_STATUSES } from '@/lib/constants';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
@@ -16,21 +15,24 @@ interface CreateIssueModalProps {
   onClose: () => void;
   defaultSprintId?: string;
   editIssue?: Issue;
+  projectId: string;
+  projectKey: string;
 }
 
-export function CreateIssueModal({ open, onClose, defaultSprintId, editIssue }: CreateIssueModalProps) {
+export function CreateIssueModal({
+  open,
+  onClose,
+  defaultSprintId,
+  editIssue,
+  projectId,
+  projectKey,
+}: CreateIssueModalProps) {
   const { createIssue, updateIssue } = useIssueStore();
-  const { getAllSprints } = useSprintStore();
+  const { getSprintsByProject } = useSprintStore();
   const isEditing = !!editIssue;
+  const sprints = getSprintsByProject(projectId).filter((s) => s.status !== 'completed');
 
-  const sprints = getAllSprints().filter((s) => s.status !== 'completed');
-
-  const {
-    register,
-    handleSubmit,
-    reset,
-    formState: { errors },
-  } = useForm<CreateIssueInput>({
+  const { register, handleSubmit, reset, formState: { errors } } = useForm<CreateIssueInput>({
     defaultValues: editIssue
       ? {
           title: editIssue.title,
@@ -43,12 +45,7 @@ export function CreateIssueModal({ open, onClose, defaultSprintId, editIssue }: 
           storyPoints: editIssue.storyPoints,
           acceptanceCriteria: editIssue.acceptanceCriteria,
         }
-      : {
-          type: 'story',
-          priority: 'medium',
-          status: 'backlog',
-          sprintId: defaultSprintId ?? '',
-        },
+      : { type: 'story', priority: 'medium', status: 'backlog', sprintId: defaultSprintId ?? '' },
   });
 
   const onSubmit = (data: CreateIssueInput) => {
@@ -61,7 +58,7 @@ export function CreateIssueModal({ open, onClose, defaultSprintId, editIssue }: 
     if (isEditing) {
       updateIssue(editIssue!.id, clean);
     } else {
-      createIssue(clean);
+      createIssue({ ...clean, projectId, projectKey });
     }
     reset();
     onClose();
@@ -71,7 +68,7 @@ export function CreateIssueModal({ open, onClose, defaultSprintId, editIssue }: 
     <Modal
       open={open}
       onClose={() => { reset(); onClose(); }}
-      title={isEditing ? 'Edit Issue' : 'Create Issue'}
+      title={isEditing ? 'Edit Issue' : `Create Issue · ${projectKey}`}
       size="xl"
       footer={
         <>
@@ -95,28 +92,24 @@ export function CreateIssueModal({ open, onClose, defaultSprintId, editIssue }: 
             {...register('priority', { required: true })}
           />
         </div>
-
         <Input
           label="Title"
           placeholder="Enter issue title…"
           error={errors.title?.message}
           {...register('title', { required: 'Title is required' })}
         />
-
         <Textarea
           label="Description"
           placeholder="Describe the issue in detail…"
           rows={3}
           {...register('description')}
         />
-
         <Textarea
           label="Acceptance Criteria"
           placeholder="- Criterion 1&#10;- Criterion 2"
           rows={3}
           {...register('acceptanceCriteria')}
         />
-
         <div className="grid grid-cols-3 gap-3">
           <Select
             label="Status"
@@ -136,7 +129,6 @@ export function CreateIssueModal({ open, onClose, defaultSprintId, editIssue }: 
             {...register('storyPoints')}
           />
         </div>
-
         <Select
           label="Sprint"
           placeholder="Product Backlog (no sprint)"

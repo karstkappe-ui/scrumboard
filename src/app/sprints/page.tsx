@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { Plus, Zap } from 'lucide-react';
 import { useSprintStore } from '@/store/sprintStore';
-import { useIssueStore } from '@/store/issueStore';
+import { useProjectStore } from '@/store/projectStore';
 import { Header } from '@/components/layout/Header';
 import { SprintCard } from '@/components/sprint/SprintCard';
 import { CreateSprintModal } from '@/components/sprint/CreateSprintModal';
@@ -11,11 +11,13 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import type { Sprint } from '@/types';
 
 export default function SprintsPage() {
-  const { getAllSprints } = useSprintStore();
+  const { getSprintsByProject } = useSprintStore();
+  const { getActiveProject } = useProjectStore();
   const [createOpen, setCreateOpen] = useState(false);
   const [editSprint, setEditSprint] = useState<Sprint | undefined>();
 
-  const sprints = getAllSprints();
+  const project = getActiveProject();
+  const sprints = project ? getSprintsByProject(project.id) : [];
   const active = sprints.filter((s) => s.status === 'active');
   const planning = sprints.filter((s) => s.status === 'planning');
   const completed = sprints.filter((s) => s.status === 'completed');
@@ -23,7 +25,7 @@ export default function SprintsPage() {
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <Header
-        title="Sprints"
+        title={project ? `${project.emoji} ${project.name} — Sprints` : 'Sprints'}
         subtitle={`${sprints.length} sprints · ${active.length} active`}
         actions={
           <Button
@@ -44,12 +46,7 @@ export default function SprintsPage() {
             title="No sprints yet"
             description="Create your first sprint to start planning your work."
             action={
-              <Button
-                variant="primary"
-                size="sm"
-                leftIcon={<Plus size={13} />}
-                onClick={() => setCreateOpen(true)}
-              >
+              <Button variant="primary" size="sm" leftIcon={<Plus size={13} />} onClick={() => setCreateOpen(true)}>
                 Create Sprint
               </Button>
             }
@@ -60,39 +57,25 @@ export default function SprintsPage() {
               <Section title="Active Sprint" count={active.length}>
                 <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
                   {active.map((sprint) => (
-                    <SprintCard
-                      key={sprint.id}
-                      sprint={sprint}
-                      onEdit={(s) => { setEditSprint(s); setCreateOpen(true); }}
-                    />
+                    <SprintCard key={sprint.id} sprint={sprint} onEdit={(s) => { setEditSprint(s); setCreateOpen(true); }} />
                   ))}
                 </div>
               </Section>
             )}
-
             {planning.length > 0 && (
               <Section title="Upcoming Sprints" count={planning.length}>
                 <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
                   {planning.map((sprint) => (
-                    <SprintCard
-                      key={sprint.id}
-                      sprint={sprint}
-                      onEdit={(s) => { setEditSprint(s); setCreateOpen(true); }}
-                    />
+                    <SprintCard key={sprint.id} sprint={sprint} onEdit={(s) => { setEditSprint(s); setCreateOpen(true); }} />
                   ))}
                 </div>
               </Section>
             )}
-
             {completed.length > 0 && (
               <Section title="Completed Sprints" count={completed.length}>
                 <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
                   {completed.map((sprint) => (
-                    <SprintCard
-                      key={sprint.id}
-                      sprint={sprint}
-                      onEdit={(s) => { setEditSprint(s); setCreateOpen(true); }}
-                    />
+                    <SprintCard key={sprint.id} sprint={sprint} onEdit={(s) => { setEditSprint(s); setCreateOpen(true); }} />
                   ))}
                 </div>
               </Section>
@@ -101,11 +84,14 @@ export default function SprintsPage() {
         )}
       </div>
 
-      <CreateSprintModal
-        open={createOpen}
-        onClose={() => { setCreateOpen(false); setEditSprint(undefined); }}
-        editSprint={editSprint}
-      />
+      {project && (
+        <CreateSprintModal
+          open={createOpen}
+          onClose={() => { setCreateOpen(false); setEditSprint(undefined); }}
+          editSprint={editSprint}
+          projectId={project.id}
+        />
+      )}
     </div>
   );
 }

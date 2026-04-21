@@ -4,6 +4,7 @@ import { X, ExternalLink, Copy, MoreHorizontal, Pencil } from 'lucide-react';
 import { useIssueStore } from '@/store/issueStore';
 import { useSprintStore } from '@/store/sprintStore';
 import { useUIStore } from '@/store/uiStore';
+import { useProjectStore } from '@/store/projectStore';
 import { MOCK_USERS } from '@/data/users';
 import { MOCK_LABELS } from '@/data/labels';
 import { ISSUE_TYPES, PRIORITIES, ISSUE_STATUSES, STORY_POINTS } from '@/lib/constants';
@@ -21,7 +22,8 @@ import { cn } from '@/lib/utils';
 export function IssueDetailPanel() {
   const { selectedIssueId, selectIssue } = useUIStore();
   const { issues, updateIssue, getSubtasks } = useIssueStore();
-  const { getAllSprints } = useSprintStore();
+  const { getSprintsByProject } = useSprintStore();
+  const { getActiveProject } = useProjectStore();
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleValue, setTitleValue] = useState('');
   const [activeTab, setActiveTab] = useState<'details' | 'activity'>('details');
@@ -32,7 +34,8 @@ export function IssueDetailPanel() {
   const assignee = MOCK_USERS.find((u) => u.id === issue.assigneeId);
   const reporter = MOCK_USERS.find((u) => u.id === issue.reporterId);
   const labels = MOCK_LABELS.filter((l) => issue.labelIds.includes(l.id));
-  const sprints = getAllSprints();
+  const project = getActiveProject();
+  const sprints = project ? getSprintsByProject(project.id) : [];
   const currentSprint = sprints.find((s) => s.id === issue.sprintId);
   const subtasks = getSubtasks(issue.id);
   const sp = getStoryPointProgress(subtasks);

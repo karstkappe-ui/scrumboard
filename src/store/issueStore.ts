@@ -1,21 +1,22 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { Issue, ActivityLog, Comment, CreateIssueInput, ActivityAction } from '@/types';
-import { SEED_ISSUES, SEED_ACTIVITY, SEED_COMMENTS } from '@/data/seed';
-import { PROJECT_KEY } from '@/lib/constants';
+import type { Issue, ActivityLog, Comment, CreateIssueInput } from '@/types';
+import { SEED_ISSUES, SEED_ACTIVITY, SEED_COMMENTS, SEED_ISSUES_PURE, SEED_ISSUES_NMATE } from '@/data/seed';
 import { generateId } from '@/lib/utils';
 
 function toRecord<T extends { id: string }>(arr: T[]): Record<string, T> {
   return Object.fromEntries(arr.map((item) => [item.id, item]));
 }
 
+const ALL_SEED_ISSUES = [...SEED_ISSUES, ...SEED_ISSUES_PURE, ...SEED_ISSUES_NMATE];
+
 interface IssueStore {
   issues: Record<string, Issue>;
   activity: ActivityLog[];
   comments: Record<string, Comment[]>;
-  issueCounter: number;
+  issueCounters: Record<string, number>;
 
-  createIssue: (input: CreateIssueInput) => Issue;
+  createIssue: (input: CreateIssueInput & { projectId: string; projectKey: string }) => Issue;
   updateIssue: (id: string, changes: Partial<Issue>) => void;
   deleteIssue: (id: string) => void;
   moveIssueToStatus: (id: string, status: Issue['status']) => void;
@@ -26,31 +27,36 @@ interface IssueStore {
   addComment: (issueId: string, authorId: string, content: string) => void;
   logActivity: (entry: Omit<ActivityLog, 'id' | 'createdAt'>) => void;
 
-  getIssuesByStatus: (status: Issue['status'], sprintId?: string) => Issue[];
   getIssuesBySprint: (sprintId: string) => Issue[];
-  getBacklogIssues: () => Issue[];
+  getBacklogIssues: (projectId: string) => Issue[];
   getSubtasks: (parentId: string) => Issue[];
   getIssueComments: (issueId: string) => Comment[];
+  getProjectIssues: (projectId: string) => Issue[];
 }
 
 export const useIssueStore = create<IssueStore>()(
   persist(
     (set, get) => ({
-      issues: toRecord(SEED_ISSUES),
+      issues: toRecord(ALL_SEED_ISSUES),
       activity: SEED_ACTIVITY,
       comments: SEED_COMMENTS.reduce<Record<string, Comment[]>>((acc, c) => {
         if (!acc[c.issueId]) acc[c.issueId] = [];
         acc[c.issueId].push(c);
         return acc;
       }, {}),
-      issueCounter: SEED_ISSUES.length + 1,
+      issueCounters: {
+        'proj-1': SEED_ISSUES.length + 1,
+        'proj-2': SEED_ISSUES_PURE.length + 1,
+        'proj-3': SEED_ISSUES_NMATE.length + 1,
+      },
 
       createIssue: (input) => {
-        const { issueCounter } = get();
+        const { issueCounters } = get();
+        const counter = (issueCounters[input.projectId] ?? 0) + 1;
         const now = new Date().toISOString();
         const newIssue: Issue = {
           id: generateId(),
-          key: `${PROJECT_KEY}-${issueCounter + 1}`,
+          key: `${input.projectKey}-${counter}`,
           title: input.title,
           description: input.description,
           type: input.type,
@@ -64,14 +70,14 @@ export const useIssueStore = create<IssueStore>()(
           storyPoints: input.storyPoints,
           labelIds: input.labelIds ?? [],
           acceptanceCriteria: input.acceptanceCriteria,
-          order: Object.keys(get().issues).length + 1,
-          projectId: 'proj-1',
+          order: Object.values(get().issues).filter((i) => i.projectId === input.projectId).length + 1,
+          projectId: input.projectId,
           createdAt: now,
           updatedAt: now,
         };
         set((state) => ({
           issues: { ...state.issues, [newIssue.id]: newIssue },
-          issueCounter: state.issueCounter + 1,
+          issueCounters: { ...state.issueCounters, [input.projectId]: counter },
         }));
         get().logActivity({ issueId: newIssue.id, userId: 'user-1', action: 'issue_created' });
         return newIssue;
@@ -159,12 +165,11 @@ export const useIssueStore = create<IssueStore>()(
           const activeIssue = state.issues[activeId];
           const overIssue = state.issues[overId];
           if (!activeIssue || !overIssue) return state;
-          const [aOrder, oOrder] = [activeIssue.order, overIssue.order];
           return {
             issues: {
               ...state.issues,
-              [activeId]: { ...activeIssue, order: oOrder },
-              [overId]: { ...overIssue, order: aOrder },
+              [activeId]: { ...activeIssue, order: overIssue.order },
+              [overId]: { ...overIssue, order: activeIssue.order },
             },
           };
         });
@@ -172,40 +177,16 @@ export const useIssueStore = create<IssueStore>()(
 
       addComment: (issueId, authorId, content) => {
         const now = new Date().toISOString();
-        const comment: Comment = {
-          id: generateId(),
-          issueId,
-          authorId,
-          content,
-          createdAt: now,
-          updatedAt: now,
-        };
+        const comment: Comment = { id: generateId(), issueId, authorId, content, createdAt: now, updatedAt: now };
         set((state) => ({
-          comments: {
-            ...state.comments,
-            [issueId]: [...(state.comments[issueId] ?? []), comment],
-          },
+          comments: { ...state.comments, [issueId]: [...(state.comments[issueId] ?? []), comment] },
         }));
         get().logActivity({ issueId, userId: authorId, action: 'comment_added' });
       },
 
       logActivity: (entry) => {
-        const log: ActivityLog = {
-          id: generateId(),
-          ...entry,
-          createdAt: new Date().toISOString(),
-        };
+        const log: ActivityLog = { id: generateId(), ...entry, createdAt: new Date().toISOString() };
         set((state) => ({ activity: [log, ...state.activity].slice(0, 200) }));
-      },
-
-      getIssuesByStatus: (status, sprintId) => {
-        const all = Object.values(get().issues);
-        return all
-          .filter(
-            (i) =>
-              i.status === status && !i.parentId && (sprintId ? i.sprintId === sprintId : true),
-          )
-          .sort((a, b) => a.order - b.order);
       },
 
       getIssuesBySprint: (sprintId) => {
@@ -214,9 +195,9 @@ export const useIssueStore = create<IssueStore>()(
           .sort((a, b) => a.order - b.order);
       },
 
-      getBacklogIssues: () => {
+      getBacklogIssues: (projectId) => {
         return Object.values(get().issues)
-          .filter((i) => !i.sprintId && i.type !== 'subtask')
+          .filter((i) => !i.sprintId && i.type !== 'subtask' && i.projectId === projectId)
           .sort((a, b) => a.order - b.order);
       },
 
@@ -226,8 +207,12 @@ export const useIssueStore = create<IssueStore>()(
           .sort((a, b) => a.order - b.order);
       },
 
-      getIssueComments: (issueId) => {
-        return get().comments[issueId] ?? [];
+      getIssueComments: (issueId) => get().comments[issueId] ?? [],
+
+      getProjectIssues: (projectId) => {
+        return Object.values(get().issues)
+          .filter((i) => i.projectId === projectId && i.type !== 'subtask')
+          .sort((a, b) => a.order - b.order);
       },
     }),
     { name: 'scrumboard-issues' },

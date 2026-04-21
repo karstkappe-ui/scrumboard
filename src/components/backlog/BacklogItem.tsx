@@ -11,6 +11,7 @@ import { StatusBadge } from '@/components/ui/StatusBadge';
 import { useUIStore } from '@/store/uiStore';
 import { useIssueStore } from '@/store/issueStore';
 import { useSprintStore } from '@/store/sprintStore';
+import { useProjectStore } from '@/store/projectStore';
 import { useState } from 'react';
 
 interface BacklogItemProps {
@@ -21,15 +22,19 @@ interface BacklogItemProps {
 export function BacklogItem({ issue, onEdit }: BacklogItemProps) {
   const { selectIssue } = useUIStore();
   const { deleteIssue, addToSprint, removeFromSprint, getSubtasks } = useIssueStore();
-  const { getAllSprints } = useSprintStore();
+  const { getSprintsByProject } = useSprintStore();
+  const { getActiveProject } = useProjectStore();
   const [menuOpen, setMenuOpen] = useState(false);
   const [sprintMenuOpen, setSprintMenuOpen] = useState(false);
 
+  const project = getActiveProject();
   const assignee = MOCK_USERS.find((u) => u.id === issue.assigneeId);
   const labels = MOCK_LABELS.filter((l) => issue.labelIds.includes(l.id));
   const subtasks = getSubtasks(issue.id);
   const doneSubtasks = subtasks.filter((s) => s.status === 'done').length;
-  const sprints = getAllSprints().filter((s) => s.status !== 'completed');
+  const sprints = project
+    ? getSprintsByProject(project.id).filter((s) => s.status !== 'completed')
+    : [];
 
   return (
     <div

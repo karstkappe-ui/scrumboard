@@ -9,12 +9,12 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
-  Target,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useUIStore } from '@/store/uiStore';
 import { MOCK_USERS } from '@/data/users';
 import { Avatar } from '@/components/ui/Avatar';
+import { ProjectSwitcher } from './ProjectSwitcher';
 
 const NAV_ITEMS = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
@@ -35,19 +35,9 @@ export function Sidebar() {
         isSidebarCollapsed ? 'w-14' : 'w-56',
       )}
     >
-      {/* Logo */}
-      <div className={cn('flex items-center h-14 border-b border-gray-100 px-3', !isSidebarCollapsed && 'px-4')}>
-        <div className="flex items-center gap-2.5 min-w-0">
-          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-600 flex-shrink-0">
-            <Target size={14} className="text-white" />
-          </div>
-          {!isSidebarCollapsed && (
-            <div className="min-w-0">
-              <p className="text-sm font-bold text-gray-900 leading-tight truncate">ScrumBoard</p>
-              <p className="text-[10px] text-gray-400 leading-tight">Project Tracker</p>
-            </div>
-          )}
-        </div>
+      {/* Project switcher */}
+      <div className="border-b border-gray-100">
+        <ProjectSwitcher collapsed={isSidebarCollapsed} />
       </div>
 
       {/* Navigation */}

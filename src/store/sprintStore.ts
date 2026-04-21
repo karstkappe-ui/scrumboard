@@ -1,17 +1,23 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
 import type { Sprint, CreateSprintInput } from '@/types';
-import { SEED_SPRINTS, SEED_SPRINTS_PURE, SEED_SPRINTS_NMATE } from '@/data/seed';
 import { generateId } from '@/lib/utils';
 
 function toRecord<T extends { id: string }>(arr: T[]): Record<string, T> {
   return Object.fromEntries(arr.map((item) => [item.id, item]));
 }
 
-const ALL_SEED_SPRINTS = [...SEED_SPRINTS, ...SEED_SPRINTS_PURE, ...SEED_SPRINTS_NMATE];
+function api(path: string, method: string, body?: unknown) {
+  fetch(path, {
+    method,
+    headers: { 'Content-Type': 'application/json' },
+    body: body ? JSON.stringify(body) : undefined,
+  }).catch((err) => console.warn('[api]', method, path, err));
+}
 
 interface SprintStore {
   sprints: Record<string, Sprint>;
+
+  _hydrate: (sprints: Sprint[]) => void;
 
   createSprint: (input: CreateSprintInput & { projectId: string }) => Sprint;
   updateSprint: (id: string, changes: Partial<Sprint>) => void;
@@ -24,79 +30,81 @@ interface SprintStore {
   getSprintsByProject: (projectId: string) => Sprint[];
 }
 
-export const useSprintStore = create<SprintStore>()(
-  persist(
-    (set, get) => ({
-      sprints: toRecord(ALL_SEED_SPRINTS),
+export const useSprintStore = create<SprintStore>()((set, get) => ({
+  sprints: {},
 
-      createSprint: (input) => {
-        const now = new Date().toISOString();
-        const sprint: Sprint = {
-          id: generateId(),
-          name: input.name,
-          goal: input.goal,
-          startDate: input.startDate,
-          endDate: input.endDate,
-          status: 'planning',
-          projectId: input.projectId,
-          createdAt: now,
-          updatedAt: now,
-        };
-        set((state) => ({ sprints: { ...state.sprints, [sprint.id]: sprint } }));
-        return sprint;
-      },
+  _hydrate: (sprints) => set({ sprints: toRecord(sprints) }),
 
-      updateSprint: (id, changes) => {
-        set((state) => {
-          const existing = state.sprints[id];
-          if (!existing) return state;
-          return {
-            sprints: { ...state.sprints, [id]: { ...existing, ...changes, updatedAt: new Date().toISOString() } },
-          };
-        });
-      },
+  createSprint: (input) => {
+    const now = new Date().toISOString();
+    const sprint: Sprint = {
+      id: generateId(),
+      name: input.name,
+      goal: input.goal,
+      startDate: input.startDate,
+      endDate: input.endDate,
+      status: 'planning',
+      projectId: input.projectId,
+      createdAt: now,
+      updatedAt: now,
+    };
+    set((state) => ({ sprints: { ...state.sprints, [sprint.id]: sprint } }));
+    api('/api/sprints', 'POST', sprint);
+    return sprint;
+  },
 
-      deleteSprint: (id) => {
-        set((state) => {
-          const { [id]: _removed, ...rest } = state.sprints;
-          return { sprints: rest };
-        });
-      },
+  updateSprint: (id, changes) => {
+    set((state) => {
+      const existing = state.sprints[id];
+      if (!existing) return state;
+      return {
+        sprints: { ...state.sprints, [id]: { ...existing, ...changes, updatedAt: new Date().toISOString() } },
+      };
+    });
+    api(`/api/sprints/${id}`, 'PATCH', changes);
+  },
 
-      startSprint: (id) => {
-        set((state) => {
-          const sprint = state.sprints[id];
-          if (!sprint) return state;
-          return {
-            sprints: { ...state.sprints, [id]: { ...sprint, status: 'active', updatedAt: new Date().toISOString() } },
-          };
-        });
-      },
+  deleteSprint: (id) => {
+    set((state) => {
+      const { [id]: _removed, ...rest } = state.sprints;
+      return { sprints: rest };
+    });
+    api(`/api/sprints/${id}`, 'DELETE');
+  },
 
-      completeSprint: (id) => {
-        set((state) => {
-          const sprint = state.sprints[id];
-          if (!sprint) return state;
-          return {
-            sprints: { ...state.sprints, [id]: { ...sprint, status: 'completed', updatedAt: new Date().toISOString() } },
-          };
-        });
-      },
+  startSprint: (id) => {
+    set((state) => {
+      const sprint = state.sprints[id];
+      if (!sprint) return state;
+      return {
+        sprints: { ...state.sprints, [id]: { ...sprint, status: 'active', updatedAt: new Date().toISOString() } },
+      };
+    });
+    api(`/api/sprints/${id}`, 'PATCH', { status: 'active' });
+  },
 
-      getActiveSprint: (projectId) => {
-        return Object.values(get().sprints).find(
-          (s) => s.status === 'active' && s.projectId === projectId,
-        );
-      },
+  completeSprint: (id) => {
+    set((state) => {
+      const sprint = state.sprints[id];
+      if (!sprint) return state;
+      return {
+        sprints: { ...state.sprints, [id]: { ...sprint, status: 'completed', updatedAt: new Date().toISOString() } },
+      };
+    });
+    api(`/api/sprints/${id}`, 'PATCH', { status: 'completed' });
+  },
 
-      getSprintById: (id) => get().sprints[id],
+  getActiveSprint: (projectId) => {
+    return Object.values(get().sprints).find(
+      (s) => s.status === 'active' && s.projectId === projectId,
+    );
+  },
 
-      getSprintsByProject: (projectId) => {
-        return Object.values(get().sprints)
-          .filter((s) => s.projectId === projectId)
-          .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
-      },
-    }),
-    { name: 'scrumboard-sprints' },
-  ),
-);
+  getSprintById: (id) => get().sprints[id],
+
+  getSprintsByProject: (projectId) => {
+    return Object.values(get().sprints)
+      .filter((s) => s.projectId === projectId)
+      .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
+  },
+}));

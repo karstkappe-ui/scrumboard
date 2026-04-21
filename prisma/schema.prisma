@@ -1,0 +1,115 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id        String   @id
+  name      String
+  email     String   @unique
+  password  String
+  initials  String
+  color     String
+  role      String   @default("developer")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  assignedIssues Issue[]      @relation("assignee")
+  reportedIssues Issue[]      @relation("reporter")
+  comments       Comment[]
+  activities     ActivityLog[]
+}
+
+model Project {
+  id          String   @id
+  name        String
+  key         String   @unique
+  description String?
+  color       String
+  emoji       String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  sprints Sprint[]
+  issues  Issue[]
+}
+
+model Sprint {
+  id        String   @id
+  name      String
+  goal      String?
+  startDate DateTime
+  endDate   DateTime
+  status    String   @default("planning")
+  projectId String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  issues  Issue[]
+}
+
+model Issue {
+  id                 String   @id
+  key                String
+  title              String
+  description        String?
+  type               String
+  status             String   @default("backlog")
+  priority           String   @default("medium")
+  assigneeId         String?
+  reporterId         String
+  sprintId           String?
+  epicId             String?
+  parentId           String?
+  storyPoints        Int?
+  labelIds           String[]
+  acceptanceCriteria String?
+  order              Int      @default(0)
+  projectId          String
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  project  Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  sprint   Sprint?  @relation(fields: [sprintId], references: [id])
+  assignee User?    @relation("assignee", fields: [assigneeId], references: [id])
+  reporter User     @relation("reporter", fields: [reporterId], references: [id])
+  parent   Issue?   @relation("subtasks", fields: [parentId], references: [id])
+  subtasks Issue[]  @relation("subtasks")
+
+  comments   Comment[]
+  activities ActivityLog[]
+}
+
+model Comment {
+  id        String   @id
+  issueId   String
+  authorId  String
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  issue  Issue @relation(fields: [issueId], references: [id], onDelete: Cascade)
+  author User  @relation(fields: [authorId], references: [id])
+}
+
+model ActivityLog {
+  id        String   @id
+  issueId   String?
+  sprintId  String?
+  userId    String
+  action    String
+  field     String?
+  oldValue  String?
+  newValue  String?
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  issue Issue? @relation(fields: [issueId], references: [id], onDelete: SetNull)
+  user  User   @relation(fields: [userId], references: [id])
+}

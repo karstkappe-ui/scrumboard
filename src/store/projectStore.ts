@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { Project } from '@/types';
-import { SEED_PROJECTS } from '@/data/projects';
 
 function toRecord<T extends { id: string }>(arr: T[]): Record<string, T> {
   return Object.fromEntries(arr.map((item) => [item.id, item]));
@@ -11,6 +10,7 @@ interface ProjectStore {
   projects: Record<string, Project>;
   activeProjectId: string;
 
+  _hydrate: (projects: Project[]) => void;
   setActiveProject: (id: string) => void;
   getActiveProject: () => Project | undefined;
   getAllProjects: () => Project[];
@@ -20,8 +20,10 @@ interface ProjectStore {
 export const useProjectStore = create<ProjectStore>()(
   persist(
     (set, get) => ({
-      projects: toRecord(SEED_PROJECTS),
+      projects: {},
       activeProjectId: 'proj-1',
+
+      _hydrate: (projects) => set({ projects: toRecord(projects) }),
 
       setActiveProject: (id) => set({ activeProjectId: id }),
 
@@ -41,6 +43,9 @@ export const useProjectStore = create<ProjectStore>()(
         return project;
       },
     }),
-    { name: 'scrumboard-projects' },
+    {
+      name: 'scrumboard-projects',
+      partialize: (s) => ({ activeProjectId: s.activeProjectId }),
+    },
   ),
 );

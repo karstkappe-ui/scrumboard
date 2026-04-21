@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { useIssueStore } from '@/store/issueStore';
+import { useUIStore } from '@/store/uiStore';
 import { MOCK_USERS } from '@/data/users';
 import { Avatar } from '@/components/ui/Avatar';
 import { formatRelativeDate } from '@/lib/utils';
@@ -24,6 +25,8 @@ interface ActivitySectionProps {
 
 export function ActivitySection({ issueId }: ActivitySectionProps) {
   const { activity, getIssueComments, addComment } = useIssueStore();
+  const { currentUserId } = useUIStore();
+  const currentUser = MOCK_USERS.find((u) => u.id === currentUserId) ?? MOCK_USERS[0];
   const [newComment, setNewComment] = useState('');
 
   const issueActivity = activity.filter((a) => a.issueId === issueId).slice(0, 10);
@@ -31,7 +34,7 @@ export function ActivitySection({ issueId }: ActivitySectionProps) {
 
   const handleSubmitComment = () => {
     if (!newComment.trim()) return;
-    addComment(issueId, 'user-1', newComment.trim());
+    addComment(issueId, currentUserId, newComment.trim());
     setNewComment('');
   };
 
@@ -63,7 +66,7 @@ export function ActivitySection({ issueId }: ActivitySectionProps) {
 
         {/* Add comment */}
         <div className="flex gap-2 mt-3">
-          <Avatar user={MOCK_USERS[0]} size="sm" className="flex-shrink-0 mt-0.5" />
+          <Avatar user={currentUser} size="sm" className="flex-shrink-0 mt-0.5" />
           <div className="flex-1">
             <textarea
               value={newComment}

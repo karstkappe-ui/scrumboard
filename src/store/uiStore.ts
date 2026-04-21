@@ -16,6 +16,7 @@ interface UIStore {
   filters: FilterState;
   searchQuery: string;
   isSidebarCollapsed: boolean;
+  currentUserId: string;
 
   selectIssue: (id: string | null) => void;
   setActiveSprint: (projectId: string, sprintId: string) => void;
@@ -25,6 +26,7 @@ interface UIStore {
   resetFilters: () => void;
   hasActiveFilters: () => boolean;
   toggleSidebar: () => void;
+  setCurrentUserId: (id: string) => void;
 }
 
 export const useUIStore = create<UIStore>()(
@@ -35,6 +37,7 @@ export const useUIStore = create<UIStore>()(
       filters: defaultFilters,
       searchQuery: '',
       isSidebarCollapsed: false,
+      currentUserId: 'user-1',
 
       selectIssue: (id) => set({ selectedIssueId: id }),
 
@@ -75,6 +78,8 @@ export const useUIStore = create<UIStore>()(
       },
 
       toggleSidebar: () => set((state) => ({ isSidebarCollapsed: !state.isSidebarCollapsed })),
+
+      setCurrentUserId: (id) => set({ currentUserId: id }),
     }),
     {
       name: 'scrumboard-ui',

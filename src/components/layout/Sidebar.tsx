@@ -9,12 +9,14 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
+  LogOut,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useUIStore } from '@/store/uiStore';
 import { MOCK_USERS } from '@/data/users';
 import { Avatar } from '@/components/ui/Avatar';
 import { ProjectSwitcher } from './ProjectSwitcher';
+import { signOut } from 'next-auth/react';
 
 const NAV_ITEMS = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
@@ -25,8 +27,8 @@ const NAV_ITEMS = [
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { isSidebarCollapsed, toggleSidebar } = useUIStore();
-  const currentUser = MOCK_USERS[0];
+  const { isSidebarCollapsed, toggleSidebar, currentUserId } = useUIStore();
+  const currentUser = MOCK_USERS.find((u) => u.id === currentUserId) ?? MOCK_USERS[0];
 
   return (
     <aside
@@ -77,15 +79,6 @@ export function Sidebar() {
 
       {/* Footer */}
       <div className="border-t border-gray-100 p-2 space-y-1">
-        {!isSidebarCollapsed && (
-          <Link
-            href="/settings"
-            className="flex items-center gap-2.5 rounded-md px-2 py-1.5 text-sm font-medium text-gray-500 hover:bg-gray-100 transition-colors"
-          >
-            <Settings size={16} className="text-gray-400 flex-shrink-0" />
-            <span>Settings</span>
-          </Link>
-        )}
         <div
           className={cn(
             'flex items-center gap-2 rounded-md px-2 py-1.5',
@@ -100,6 +93,15 @@ export function Sidebar() {
             </div>
           )}
         </div>
+        {!isSidebarCollapsed && (
+          <button
+            onClick={() => signOut({ callbackUrl: '/login' })}
+            className="w-full flex items-center gap-2 rounded-md px-2 py-1.5 text-xs text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-colors"
+          >
+            <LogOut size={13} className="text-gray-400 flex-shrink-0" />
+            <span>Uitloggen</span>
+          </button>
+        )}
         <button
           onClick={toggleSidebar}
           className="w-full flex items-center justify-center rounded-md p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"

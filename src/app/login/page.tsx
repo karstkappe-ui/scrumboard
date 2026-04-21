@@ -104,12 +104,12 @@ export default function LoginPage() {
           </p>
           <div className="grid grid-cols-2 gap-1.5">
             {[
-              ['karst@scrumboard.dev', 'Karst'],
-              ['simon@scrumboard.dev', 'Simon'],
-              ['jeroen@scrumboard.dev', 'Jeroen'],
-              ['jesper@scrumboard.dev', 'Jesper'],
+              ['karst.kappe98@gmail.com', 'Karst'],
+              ['simon@sanddbeheer.nl', 'Simon'],
+              ['jeroen.dijkstra1991@gmail.com', 'Jeroen'],
+              ['jesperdeleeuw01@gmail.com', 'Jesper'],
               ['bas@scrumboard.dev', 'Bas'],
-              ['riccardo@scrumboard.dev', 'Riccardo'],
+              ['riccardo@xvector.nl', 'Riccardo'],
             ].map(([mail, name]) => (
               <button
                 key={mail}

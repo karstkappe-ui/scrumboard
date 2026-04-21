@@ -4,7 +4,7 @@ export const MOCK_USERS: User[] = [
   {
     id: 'user-1',
     name: 'Karst',
-    email: 'karst@scrumboard.dev',
+    email: 'karst.kappe98@gmail.com',
     initials: 'KA',
     color: '#4F46E5',
     role: 'developer',
@@ -12,7 +12,7 @@ export const MOCK_USERS: User[] = [
   {
     id: 'user-2',
     name: 'Simon',
-    email: 'simon@scrumboard.dev',
+    email: 'simon@sanddbeheer.nl',
     initials: 'SI',
     color: '#7C3AED',
     role: 'developer',
@@ -20,7 +20,7 @@ export const MOCK_USERS: User[] = [
   {
     id: 'user-3',
     name: 'Jeroen',
-    email: 'jeroen@scrumboard.dev',
+    email: 'jeroen.dijkstra1991@gmail.com',
     initials: 'JE',
     color: '#059669',
     role: 'designer',
@@ -28,7 +28,7 @@ export const MOCK_USERS: User[] = [
   {
     id: 'user-4',
     name: 'Jesper',
-    email: 'jesper@scrumboard.dev',
+    email: 'jesperdeleeuw01@gmail.com',
     initials: 'JS',
     color: '#D97706',
     role: 'tester',
@@ -44,7 +44,7 @@ export const MOCK_USERS: User[] = [
   {
     id: 'user-6',
     name: 'Riccardo',
-    email: 'riccardo@scrumboard.dev',
+    email: 'riccardo@xvector.nl',
     initials: 'RI',
     color: '#0891B2',
     role: 'developer',

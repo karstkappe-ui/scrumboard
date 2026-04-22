@@ -15,25 +15,34 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useUIStore } from '@/store/uiStore';
+import { useProjectStore } from '@/store/projectStore';
 import { MOCK_USERS } from '@/data/users';
 import { Avatar } from '@/components/ui/Avatar';
 import { ProjectSwitcher } from './ProjectSwitcher';
 import { ChangePasswordModal } from './ChangePasswordModal';
 import { signOut } from 'next-auth/react';
 
-const NAV_ITEMS = [
+const BASE_NAV_ITEMS = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/board', label: 'Board', icon: Columns3 },
   { href: '/backlog', label: 'Backlog', icon: List },
   { href: '/sprints', label: 'Sprints', icon: Zap },
-  { href: '/todo', label: 'Mijn taken', icon: CheckSquare },
 ];
+
+const NEWMATE_PROJECT_ID = 'proj-3';
+const KARST_USER_ID = 'user-1';
 
 export function Sidebar() {
   const pathname = usePathname();
   const { isSidebarCollapsed, toggleSidebar, currentUserId } = useUIStore();
+  const { activeProjectId } = useProjectStore();
   const currentUser = MOCK_USERS.find((u) => u.id === currentUserId) ?? MOCK_USERS[0];
   const [showPasswordModal, setShowPasswordModal] = useState(false);
+
+  const showMijnTaken = currentUserId === KARST_USER_ID && activeProjectId === NEWMATE_PROJECT_ID;
+  const navItems = showMijnTaken
+    ? [...BASE_NAV_ITEMS, { href: '/todo', label: 'Mijn taken', icon: CheckSquare }]
+    : BASE_NAV_ITEMS;
 
   return (
     <aside
@@ -54,7 +63,7 @@ export function Sidebar() {
             Navigation
           </p>
         )}
-        {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
+        {navItems.map(({ href, label, icon: Icon }) => {
           const isActive = href === '/' ? pathname === '/' : pathname.startsWith(href);
           return (
             <Link

@@ -1,5 +1,6 @@
 'use client';
 import { useState, useRef } from 'react';
+import { redirect } from 'next/navigation';
 import {
   DndContext,
   DragOverlay,
@@ -15,8 +16,13 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { Plus, Trash2, Check, RefreshCw, Calendar, ClipboardList, CheckCircle2, Pencil, GripVertical } from 'lucide-react';
 import { useTodoStore, type TodoCategory, type Todo } from '@/store/todoStore';
+import { useUIStore } from '@/store/uiStore';
+import { useProjectStore } from '@/store/projectStore';
 import { Header } from '@/components/layout/Header';
 import { cn } from '@/lib/utils';
+
+const NEWMATE_PROJECT_ID = 'proj-3';
+const KARST_USER_ID = 'user-1';
 
 const COLUMNS: {
   key: TodoCategory;
@@ -66,8 +72,14 @@ const COLUMNS: {
 ];
 
 export default function TodoPage() {
+  const { currentUserId } = useUIStore();
+  const { activeProjectId } = useProjectStore();
   const { todos, addTodo, deleteTodo, moveTodo, editTodo } = useTodoStore();
   const [activeId, setActiveId] = useState<string | null>(null);
+
+  if (currentUserId !== KARST_USER_ID || activeProjectId !== NEWMATE_PROJECT_ID) {
+    redirect('/');
+  }
   const [overColumn, setOverColumn] = useState<TodoCategory | null>(null);
 
   const sensors = useSensors(

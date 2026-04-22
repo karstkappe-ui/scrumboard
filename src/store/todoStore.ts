@@ -1,5 +1,4 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
 import { generateId } from '@/lib/utils';
 
 export type TodoCategory = 'today' | 'todo' | 'recurring' | 'done';
@@ -13,63 +12,60 @@ export interface Todo {
 }
 
 interface TodoStore {
-  byUser: Record<string, Todo[]>;
-  addTodo: (userId: string, title: string, category: TodoCategory) => void;
-  deleteTodo: (userId: string, id: string) => void;
-  moveTodo: (userId: string, id: string, category: TodoCategory) => void;
-  editTodo: (userId: string, id: string, title: string) => void;
-  getTodos: (userId: string) => Todo[];
+  todos: Todo[];
+  _hydrate: (todos: Todo[]) => void;
+  addTodo: (title: string, category: TodoCategory) => void;
+  deleteTodo: (id: string) => void;
+  moveTodo: (id: string, category: TodoCategory) => void;
+  editTodo: (id: string, title: string) => void;
 }
 
-export const useTodoStore = create<TodoStore>()(
-  persist(
-    (set, get) => ({
-      byUser: {},
+export const useTodoStore = create<TodoStore>()((set, get) => ({
+  todos: [],
 
-      addTodo: (userId, title, category) => {
-        const todos = get().byUser[userId] ?? [];
-        const newTodo: Todo = {
-          id: generateId(),
-          title,
-          category,
-          order: todos.filter((t) => t.category === category).length,
-          createdAt: new Date().toISOString(),
-        };
-        set((state) => ({
-          byUser: { ...state.byUser, [userId]: [...(state.byUser[userId] ?? []), newTodo] },
-        }));
-      },
+  _hydrate: (todos) => set({ todos }),
 
-      deleteTodo: (userId, id) => {
-        set((state) => ({
-          byUser: { ...state.byUser, [userId]: (state.byUser[userId] ?? []).filter((t) => t.id !== id) },
-        }));
-      },
+  addTodo: (title, category) => {
+    const todos = get().todos;
+    const newTodo: Todo = {
+      id: generateId(),
+      title,
+      category,
+      order: todos.filter((t) => t.category === category).length,
+      createdAt: new Date().toISOString(),
+    };
+    set((state) => ({ todos: [...state.todos, newTodo] }));
+    fetch('/api/todos', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: newTodo.id, title, category, order: newTodo.order }),
+    }).catch(() => {});
+  },
 
-      moveTodo: (userId, id, category) => {
-        set((state) => ({
-          byUser: {
-            ...state.byUser,
-            [userId]: (state.byUser[userId] ?? []).map((t) =>
-              t.id === id ? { ...t, category } : t,
-            ),
-          },
-        }));
-      },
+  deleteTodo: (id) => {
+    set((state) => ({ todos: state.todos.filter((t) => t.id !== id) }));
+    fetch(`/api/todos/${id}`, { method: 'DELETE' }).catch(() => {});
+  },
 
-      editTodo: (userId, id, title) => {
-        set((state) => ({
-          byUser: {
-            ...state.byUser,
-            [userId]: (state.byUser[userId] ?? []).map((t) =>
-              t.id === id ? { ...t, title } : t,
-            ),
-          },
-        }));
-      },
+  moveTodo: (id, category) => {
+    set((state) => ({
+      todos: state.todos.map((t) => (t.id === id ? { ...t, category } : t)),
+    }));
+    fetch(`/api/todos/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ category }),
+    }).catch(() => {});
+  },
 
-      getTodos: (userId) => get().byUser[userId] ?? [],
-    }),
-    { name: 'scrumboard-todos' },
-  ),
-);
+  editTodo: (id, title) => {
+    set((state) => ({
+      todos: state.todos.map((t) => (t.id === id ? { ...t, title } : t)),
+    }));
+    fetch(`/api/todos/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title }),
+    }).catch(() => {});
+  },
+}));

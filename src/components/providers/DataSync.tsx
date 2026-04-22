@@ -5,6 +5,7 @@ import { useIssueStore } from '@/store/issueStore';
 import { useSprintStore } from '@/store/sprintStore';
 import { useProjectStore } from '@/store/projectStore';
 import { useUIStore } from '@/store/uiStore';
+import { useTodoStore } from '@/store/todoStore';
 import type { Issue, Sprint, Project, Comment, ActivityLog } from '@/types';
 
 interface SyncData {
@@ -20,6 +21,7 @@ export function DataSync({ children }: { children: React.ReactNode }) {
   const { _hydrate: hydrateIssues } = useIssueStore();
   const { _hydrate: hydrateSprints } = useSprintStore();
   const { _hydrate: hydrateProjects } = useProjectStore();
+  const { _hydrate: hydrateTodos } = useTodoStore();
   const { setCurrentUserId } = useUIStore();
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -32,16 +34,23 @@ export function DataSync({ children }: { children: React.ReactNode }) {
 
   async function sync() {
     try {
-      const res = await fetch('/api/sync');
-      if (!res.ok) return;
-      const data: SyncData = await res.json();
-      hydrateProjects(data.projects);
-      hydrateSprints(data.sprints);
-      hydrateIssues({
-        issues: data.issues,
-        comments: data.comments,
-        activity: data.activity,
-      });
+      const [syncRes, todosRes] = await Promise.all([
+        fetch('/api/sync'),
+        fetch('/api/todos'),
+      ]);
+      if (syncRes.ok) {
+        const data: SyncData = await syncRes.json();
+        hydrateProjects(data.projects);
+        hydrateSprints(data.sprints);
+        hydrateIssues({
+          issues: data.issues,
+          comments: data.comments,
+          activity: data.activity,
+        });
+      }
+      if (todosRes.ok) {
+        hydrateTodos(await todosRes.json());
+      }
     } catch {
       // silent – will retry next interval
     }

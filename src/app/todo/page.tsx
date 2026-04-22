@@ -2,7 +2,6 @@
 import { useState, useRef } from 'react';
 import { Plus, Trash2, Check, RefreshCw, Calendar, ClipboardList, CheckCircle2, Pencil, X } from 'lucide-react';
 import { useTodoStore, type TodoCategory, type Todo } from '@/store/todoStore';
-import { useUIStore } from '@/store/uiStore';
 import { Header } from '@/components/layout/Header';
 import { cn } from '@/lib/utils';
 
@@ -49,9 +48,7 @@ const COLUMNS: {
 ];
 
 export default function TodoPage() {
-  const { currentUserId } = useUIStore();
-  const { getTodos, addTodo, deleteTodo, moveTodo, editTodo } = useTodoStore();
-  const todos = getTodos(currentUserId);
+  const { todos, addTodo, deleteTodo, moveTodo, editTodo } = useTodoStore();
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
@@ -66,11 +63,10 @@ export default function TodoPage() {
               key={col.key}
               column={col}
               todos={todos.filter((t) => t.category === col.key)}
-              userId={currentUserId}
-              onAdd={(title) => addTodo(currentUserId, title, col.key)}
-              onDelete={(id) => deleteTodo(currentUserId, id)}
-              onMove={(id, cat) => moveTodo(currentUserId, id, cat)}
-              onEdit={(id, title) => editTodo(currentUserId, id, title)}
+              onAdd={(title) => addTodo(title, col.key)}
+              onDelete={(id) => deleteTodo(id)}
+              onMove={(id, cat) => moveTodo(id, cat)}
+              onEdit={(id, title) => editTodo(id, title)}
             />
           ))}
         </div>
@@ -82,7 +78,6 @@ export default function TodoPage() {
 function TodoColumn({
   column,
   todos,
-  userId,
   onAdd,
   onDelete,
   onMove,
@@ -90,7 +85,6 @@ function TodoColumn({
 }: {
   column: typeof COLUMNS[number];
   todos: Todo[];
-  userId: string;
   onAdd: (title: string) => void;
   onDelete: (id: string) => void;
   onMove: (id: string, cat: TodoCategory) => void;

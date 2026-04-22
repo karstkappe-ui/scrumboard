@@ -11,6 +11,7 @@ import {
   ChevronLeft,
   ChevronRight,
   LogOut,
+  CheckSquare,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useUIStore } from '@/store/uiStore';
@@ -25,6 +26,7 @@ const NAV_ITEMS = [
   { href: '/board', label: 'Board', icon: Columns3 },
   { href: '/backlog', label: 'Backlog', icon: List },
   { href: '/sprints', label: 'Sprints', icon: Zap },
+  { href: '/todo', label: 'Mijn taken', icon: CheckSquare },
 ];
 
 export function Sidebar() {

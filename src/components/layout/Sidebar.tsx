@@ -12,6 +12,7 @@ import {
   ChevronRight,
   LogOut,
   CheckSquare,
+  Users,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useUIStore } from '@/store/uiStore';
@@ -27,6 +28,7 @@ const BASE_NAV_ITEMS = [
   { href: '/board', label: 'Board', icon: Columns3 },
   { href: '/backlog', label: 'Backlog', icon: List },
   { href: '/sprints', label: 'Sprints', icon: Zap },
+  { href: '/team', label: 'Team', icon: Users },
 ];
 
 const NEWMATE_PROJECT_ID = 'proj-3';

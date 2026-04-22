@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ChevronDown, Check } from 'lucide-react';
 import type { Project } from '@/types';
 import { useProjectStore } from '@/store/projectStore';
@@ -7,14 +7,26 @@ import { useUIStore } from '@/store/uiStore';
 import { useSprintStore } from '@/store/sprintStore';
 import { cn } from '@/lib/utils';
 
+const NEWMATE_PROJECT_ID = 'proj-3';
+const KARST_USER_ID = 'user-1';
+
 export function ProjectSwitcher({ collapsed }: { collapsed: boolean }) {
   const { getAllProjects, activeProjectId, setActiveProject } = useProjectStore();
-  const { setActiveSprint } = useUIStore();
+  const { setActiveSprint, currentUserId } = useUIStore();
   const { getActiveSprint } = useSprintStore();
   const [open, setOpen] = useState(false);
 
-  const projects = getAllProjects();
+  const allProjects = getAllProjects();
+  const isKarst = currentUserId === KARST_USER_ID;
+  const projects = allProjects.filter((p) => isKarst || p.id !== NEWMATE_PROJECT_ID);
   const active = projects.find((p) => p.id === activeProjectId);
+
+  // If a non-Karst user has New Mate active, switch them to the first available project
+  useEffect(() => {
+    if (!isKarst && activeProjectId === NEWMATE_PROJECT_ID && projects.length > 0) {
+      setActiveProject(projects[0].id);
+    }
+  }, [isKarst, activeProjectId, projects, setActiveProject]);
 
   const handleSelect = (projectId: string) => {
     setActiveProject(projectId);

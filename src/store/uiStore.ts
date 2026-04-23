@@ -16,6 +16,7 @@ interface UIStore {
   filters: FilterState;
   searchQuery: string;
   isSidebarCollapsed: boolean;
+  isSidebarOpen: boolean;
   currentUserId: string;
 
   selectIssue: (id: string | null) => void;
@@ -26,6 +27,8 @@ interface UIStore {
   resetFilters: () => void;
   hasActiveFilters: () => boolean;
   toggleSidebar: () => void;
+  openSidebar: () => void;
+  closeSidebar: () => void;
   setCurrentUserId: (id: string) => void;
 }
 
@@ -37,6 +40,7 @@ export const useUIStore = create<UIStore>()(
       filters: defaultFilters,
       searchQuery: '',
       isSidebarCollapsed: false,
+      isSidebarOpen: false,
       currentUserId: 'user-1',
 
       selectIssue: (id) => set({ selectedIssueId: id }),
@@ -78,6 +82,10 @@ export const useUIStore = create<UIStore>()(
       },
 
       toggleSidebar: () => set((state) => ({ isSidebarCollapsed: !state.isSidebarCollapsed })),
+
+      openSidebar: () => set({ isSidebarOpen: true }),
+
+      closeSidebar: () => set({ isSidebarOpen: false }),
 
       setCurrentUserId: (id) => set({ currentUserId: id }),
     }),

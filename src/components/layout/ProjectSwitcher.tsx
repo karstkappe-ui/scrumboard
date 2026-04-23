@@ -12,7 +12,7 @@ const KARST_USER_ID = 'user-1';
 
 export function ProjectSwitcher({ collapsed }: { collapsed: boolean }) {
   const { getAllProjects, activeProjectId, setActiveProject } = useProjectStore();
-  const { setActiveSprint, currentUserId } = useUIStore();
+  const { setActiveSprint, currentUserId, closeSidebar } = useUIStore();
   const { getActiveSprint } = useSprintStore();
   const [open, setOpen] = useState(false);
 
@@ -33,6 +33,7 @@ export function ProjectSwitcher({ collapsed }: { collapsed: boolean }) {
     const sprint = getActiveSprint(projectId);
     if (sprint) setActiveSprint(projectId, sprint.id);
     setOpen(false);
+    closeSidebar();
   };
 
   if (collapsed) {

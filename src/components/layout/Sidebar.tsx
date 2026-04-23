@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   LayoutDashboard,
   List,
@@ -13,6 +13,7 @@ import {
   LogOut,
   CheckSquare,
   Users,
+  X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useUIStore } from '@/store/uiStore';
@@ -36,10 +37,20 @@ const KARST_USER_ID = 'user-1';
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { isSidebarCollapsed, toggleSidebar, currentUserId } = useUIStore();
+  const {
+    isSidebarCollapsed,
+    isSidebarOpen,
+    toggleSidebar,
+    closeSidebar,
+    currentUserId,
+  } = useUIStore();
   const { activeProjectId } = useProjectStore();
   const currentUser = MOCK_USERS.find((u) => u.id === currentUserId) ?? MOCK_USERS[0];
   const [showPasswordModal, setShowPasswordModal] = useState(false);
+
+  useEffect(() => {
+    closeSidebar();
+  }, [pathname, closeSidebar]);
 
   const showMijnTaken = currentUserId === KARST_USER_ID && activeProjectId === NEWMATE_PROJECT_ID;
   const navItems = showMijnTaken
@@ -48,11 +59,31 @@ export function Sidebar() {
 
   return (
     <aside
+      id="mobile-sidebar"
       className={cn(
-        'flex flex-col bg-white border-r border-gray-200 transition-all duration-300 flex-shrink-0',
-        isSidebarCollapsed ? 'w-14' : 'w-56',
+        'fixed inset-0 z-50 flex h-screen w-screen flex-col bg-white/95 backdrop-blur-xl border-r border-gray-200 shadow-2xl transition-transform duration-300 ease-out flex-shrink-0 md:relative md:z-auto md:h-auto md:w-56 md:bg-white md:backdrop-blur-none md:shadow-none md:translate-x-0',
+        isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0',
+        isSidebarCollapsed ? 'md:w-14' : 'md:w-56',
       )}
     >
+      <div className="flex items-center justify-between border-b border-gray-100/80 px-4 py-3 md:hidden">
+        <div>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-gray-400">Menu</p>
+          <p className="text-sm font-semibold text-gray-900 mt-0.5">Navigatie</p>
+        </div>
+        <button
+          onClick={closeSidebar}
+          className="h-9 w-9 flex items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 transition-colors"
+          aria-label="Close menu"
+        >
+          <X size={16} />
+        </button>
+      </div>
+
+      <div className="md:hidden px-4 pt-3">
+        <div className="h-1.5 w-12 rounded-full bg-gray-200 mx-auto" />
+      </div>
+
       {/* Project switcher */}
       <div className="border-b border-gray-100">
         <ProjectSwitcher collapsed={isSidebarCollapsed} />
@@ -71,11 +102,12 @@ export function Sidebar() {
             <Link
               key={href}
               href={href}
+              onClick={closeSidebar}
               className={cn(
-                'flex items-center gap-2.5 rounded-md px-2 py-1.5 text-sm font-medium transition-colors group',
+                'flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition-all group',
                 isSidebarCollapsed && 'justify-center px-0 py-2',
                 isActive
-                  ? 'bg-indigo-50 text-indigo-700'
+                  ? 'bg-indigo-50 text-indigo-700 shadow-sm ring-1 ring-indigo-100'
                   : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900',
               )}
               title={isSidebarCollapsed ? label : undefined}
@@ -94,10 +126,10 @@ export function Sidebar() {
       </nav>
 
       {/* Footer */}
-      <div className="border-t border-gray-100 p-2 space-y-1">
+      <div className="border-t border-gray-100 p-3 space-y-2">
         <div
           className={cn(
-            'flex items-center gap-2 rounded-md px-2 py-1.5',
+            'flex items-center gap-3 rounded-xl px-3 py-2.5 bg-gray-50/70',
             isSidebarCollapsed && 'justify-center px-0',
           )}
         >
@@ -120,7 +152,10 @@ export function Sidebar() {
         )}
         {!isSidebarCollapsed && (
           <button
-            onClick={() => signOut({ callbackUrl: '/login' })}
+            onClick={() => {
+              closeSidebar();
+              signOut({ callbackUrl: '/login' });
+            }}
             className="w-full flex items-center gap-2 rounded-md px-2 py-1.5 text-xs text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-colors"
           >
             <LogOut size={13} className="text-gray-400 flex-shrink-0" />
@@ -130,10 +165,16 @@ export function Sidebar() {
         {showPasswordModal && <ChangePasswordModal onClose={() => setShowPasswordModal(false)} />}
         <button
           onClick={toggleSidebar}
-          className="w-full flex items-center justify-center rounded-md p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
+          className="hidden md:flex w-full items-center justify-center rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
           title={isSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
           {isSidebarCollapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
+        </button>
+        <button
+          onClick={closeSidebar}
+          className="mt-1 flex md:hidden w-full items-center justify-center rounded-xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 transition-colors"
+        >
+          Sluit menu
         </button>
       </div>
     </aside>

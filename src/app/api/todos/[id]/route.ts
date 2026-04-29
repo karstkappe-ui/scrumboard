@@ -8,7 +8,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const userId = (session.user as { id: string }).id;
-  const { title, category } = await req.json();
+  const { title, category, order } = await req.json();
 
   if (title !== undefined) {
     await prisma.$executeRaw`
@@ -16,11 +16,25 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       WHERE "id" = ${params.id} AND "userId" = ${userId}
     `;
   }
-  if (category !== undefined) {
-    await prisma.$executeRaw`
-      UPDATE "Todo" SET "category" = ${category}, "updatedAt" = NOW()
-      WHERE "id" = ${params.id} AND "userId" = ${userId}
-    `;
+  if (category !== undefined || order !== undefined) {
+    const newCategory = category ?? null;
+    const newOrder = order ?? null;
+    if (newCategory !== null && newOrder !== null) {
+      await prisma.$executeRaw`
+        UPDATE "Todo" SET "category" = ${newCategory}, "order" = ${newOrder}, "updatedAt" = NOW()
+        WHERE "id" = ${params.id} AND "userId" = ${userId}
+      `;
+    } else if (newCategory !== null) {
+      await prisma.$executeRaw`
+        UPDATE "Todo" SET "category" = ${newCategory}, "updatedAt" = NOW()
+        WHERE "id" = ${params.id} AND "userId" = ${userId}
+      `;
+    } else if (newOrder !== null) {
+      await prisma.$executeRaw`
+        UPDATE "Todo" SET "order" = ${newOrder}, "updatedAt" = NOW()
+        WHERE "id" = ${params.id} AND "userId" = ${userId}
+      `;
+    }
   }
   return NextResponse.json({ ok: true });
 }

@@ -18,6 +18,7 @@ interface TodoStore {
   deleteTodo: (id: string) => void;
   moveTodo: (id: string, category: TodoCategory) => void;
   editTodo: (id: string, title: string) => void;
+  commitReorder: (newTodos: Todo[], originalTodos: Todo[]) => void;
 }
 
 export const useTodoStore = create<TodoStore>()((set, get) => ({
@@ -67,5 +68,32 @@ export const useTodoStore = create<TodoStore>()((set, get) => ({
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ title }),
     }).catch(() => {});
+  },
+
+  commitReorder: (newTodos, originalTodos) => {
+    // Assign order values based on position within each category
+    const byCategory: Record<string, Todo[]> = {};
+    for (const t of newTodos) {
+      if (!byCategory[t.category]) byCategory[t.category] = [];
+      byCategory[t.category].push(t);
+    }
+    const withOrders = newTodos.map((t) => ({
+      ...t,
+      order: byCategory[t.category].findIndex((x) => x.id === t.id),
+    }));
+
+    set({ todos: withOrders });
+
+    // Fire PATCH only for items that changed category or order
+    withOrders.forEach((t) => {
+      const orig = originalTodos.find((o) => o.id === t.id);
+      if (orig && (orig.category !== t.category || orig.order !== t.order)) {
+        fetch(`/api/todos/${t.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ category: t.category, order: t.order }),
+        }).catch(() => {});
+      }
+    });
   },
 }));

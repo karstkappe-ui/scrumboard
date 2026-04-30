@@ -21,9 +21,10 @@ export async function POST(req: NextRequest) {
   const userId = (session.user as { id: string }).id;
   const body = await req.json();
 
+  const priority = body.priority ?? 'none';
   await prisma.$executeRaw`
-    INSERT INTO "Todo" ("id", "userId", "title", "category", "order", "createdAt", "updatedAt")
-    VALUES (${body.id}, ${userId}, ${body.title}, ${body.category}, ${body.order}, NOW(), NOW())
+    INSERT INTO "Todo" ("id", "userId", "title", "category", "priority", "order", "createdAt", "updatedAt")
+    VALUES (${body.id}, ${userId}, ${body.title}, ${body.category}, ${priority}, ${body.order}, NOW(), NOW())
   `;
   return NextResponse.json({ ok: true }, { status: 201 });
 }

@@ -19,8 +19,8 @@ import {
   arrayMove,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Plus, Trash2, Check, RefreshCw, Calendar, ClipboardList, CheckCircle2, Pencil, GripVertical } from 'lucide-react';
-import { useTodoStore, type TodoCategory, type Todo } from '@/store/todoStore';
+import { Plus, Trash2, Check, RefreshCw, Calendar, ClipboardList, CheckCircle2, Pencil, GripVertical, Flag } from 'lucide-react';
+import { useTodoStore, type TodoCategory, type TodoPriority, type Todo } from '@/store/todoStore';
 import { useUIStore } from '@/store/uiStore';
 import { useProjectStore } from '@/store/projectStore';
 import { Header } from '@/components/layout/Header';
@@ -28,6 +28,13 @@ import { cn } from '@/lib/utils';
 
 const NEWMATE_PROJECT_ID = 'proj-3';
 const KARST_USER_ID = 'user-1';
+
+const PRIORITY_OPTIONS: { value: TodoPriority; label: string; color: string; border: string; bg: string }[] = [
+  { value: 'none',   label: 'Geen',   color: 'text-gray-300',  border: 'border-l-transparent', bg: 'bg-transparent'  },
+  { value: 'low',    label: 'Laag',   color: 'text-sky-400',   border: 'border-l-sky-400',     bg: 'bg-sky-400'      },
+  { value: 'medium', label: 'Middel', color: 'text-amber-400', border: 'border-l-amber-400',   bg: 'bg-amber-400'    },
+  { value: 'high',   label: 'Hoog',   color: 'text-red-500',   border: 'border-l-red-500',     bg: 'bg-red-500'      },
+];
 
 const COLUMNS: {
   key: TodoCategory;
@@ -79,7 +86,7 @@ const COLUMNS: {
 export default function TodoPage() {
   const { currentUserId } = useUIStore();
   const { activeProjectId } = useProjectStore();
-  const { todos, addTodo, deleteTodo, editTodo, commitReorder } = useTodoStore();
+  const { todos, addTodo, deleteTodo, editTodo, setPriority, commitReorder } = useTodoStore();
 
   const [previewTodos, setPreviewTodos] = useState<Todo[] | null>(null);
   const originalRef = useRef<Todo[]>([]);
@@ -174,6 +181,7 @@ export default function TodoPage() {
                   onAdd={(title) => addTodo(title, col.key)}
                   onDelete={(id) => deleteTodo(id)}
                   onEdit={(id, title) => editTodo(id, title)}
+                  onChangePriority={(id, p) => setPriority(id, p)}
                 />
               );
             })}
@@ -200,6 +208,7 @@ function DroppableColumn({
   onAdd,
   onDelete,
   onEdit,
+  onChangePriority,
 }: {
   column: (typeof COLUMNS)[number];
   todos: Todo[];
@@ -207,6 +216,7 @@ function DroppableColumn({
   onAdd: (title: string) => void;
   onDelete: (id: string) => void;
   onEdit: (id: string, title: string) => void;
+  onChangePriority: (id: string, p: TodoPriority) => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: column.key });
   const [adding, setAdding] = useState(false);
@@ -252,9 +262,9 @@ function DroppableColumn({
               todo={todo}
               isDone={isDone}
               isDragging={draggedId === todo.id}
-              onDone={() => {/* handled via commitReorder on cross-column drag */}}
               onDelete={() => onDelete(todo.id)}
               onEdit={(title) => onEdit(todo.id, title)}
+              onChangePriority={(p) => onChangePriority(todo.id, p)}
             />
           ))}
         </SortableContext>
@@ -301,22 +311,22 @@ function SortableTodoCard({
   isDragging,
   onDelete,
   onEdit,
+  onChangePriority,
 }: {
   todo: Todo;
   isDone: boolean;
   isDragging: boolean;
-  onDone: () => void;
   onDelete: () => void;
   onEdit: (title: string) => void;
+  onChangePriority: (p: TodoPriority) => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: todo.id });
   const [editing, setEditing] = useState(false);
   const [editVal, setEditVal] = useState(todo.title);
+  const [showPriorityMenu, setShowPriorityMenu] = useState(false);
 
-  const style: React.CSSProperties = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  };
+  const style: React.CSSProperties = { transform: CSS.Transform.toString(transform), transition };
+  const priorityMeta = PRIORITY_OPTIONS.find((p) => p.value === (todo.priority ?? 'none'))!;
 
   const handleEditSave = () => {
     if (editVal.trim()) onEdit(editVal.trim());
@@ -329,7 +339,8 @@ function SortableTodoCard({
       ref={setNodeRef}
       style={style}
       className={cn(
-        'group flex items-start gap-2.5 px-3 py-2.5 rounded-lg border border-transparent transition-colors hover:border-gray-200 hover:bg-gray-50',
+        'group relative flex items-start gap-2 pl-2 pr-2 py-2.5 rounded-lg border-l-2 border border-transparent transition-all hover:border-gray-200 hover:bg-gray-50',
+        priorityMeta.border,
         isDone && 'opacity-50',
         isDragging && 'opacity-30 bg-gray-50 border-gray-200',
       )}
@@ -341,7 +352,7 @@ function SortableTodoCard({
         tabIndex={-1}
         className="mt-0.5 flex-shrink-0 cursor-grab active:cursor-grabbing text-gray-200 hover:text-gray-400 transition-colors opacity-0 group-hover:opacity-100"
       >
-        <GripVertical size={14} />
+        <GripVertical size={13} />
       </button>
 
       {/* Checkbox */}
@@ -369,29 +380,64 @@ function SortableTodoCard({
         />
       ) : (
         <span
-          className={cn(
-            'flex-1 text-sm text-gray-800 leading-snug cursor-text select-none',
-            isDone && 'line-through text-gray-400',
-          )}
+          className={cn('flex-1 text-sm text-gray-800 leading-snug cursor-text select-none', isDone && 'line-through text-gray-400')}
           onDoubleClick={() => { setEditing(true); setEditVal(todo.title); }}
         >
           {todo.title}
         </span>
       )}
 
-      {/* Actions */}
-      <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 mt-0.5">
+      {/* Right actions */}
+      <div className="flex items-center gap-0.5 flex-shrink-0 mt-0.5">
+        {/* Priority button — always visible when set, otherwise on hover */}
+        <div className="relative">
+          <button
+            onClick={(e) => { e.stopPropagation(); setShowPriorityMenu((v) => !v); }}
+            title={`Prioriteit: ${priorityMeta.label}`}
+            className={cn(
+              'h-6 w-6 flex items-center justify-center rounded transition-colors',
+              todo.priority !== 'none'
+                ? priorityMeta.color
+                : 'text-gray-200 opacity-0 group-hover:opacity-100 hover:text-gray-400',
+            )}
+          >
+            <Flag size={11} />
+          </button>
+
+          {showPriorityMenu && (
+            <>
+              <div className="fixed inset-0 z-40" onClick={() => setShowPriorityMenu(false)} />
+              <div className="absolute right-0 top-7 z-50 w-32 bg-white border border-gray-200 rounded-xl shadow-lg py-1 overflow-hidden">
+                {PRIORITY_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.value}
+                    onClick={() => { onChangePriority(opt.value); setShowPriorityMenu(false); }}
+                    className={cn(
+                      'w-full flex items-center gap-2.5 px-3 py-2 text-xs hover:bg-gray-50 transition-colors text-left',
+                      todo.priority === opt.value && 'bg-gray-50 font-semibold',
+                    )}
+                  >
+                    <span className={cn('h-2 w-2 rounded-full flex-shrink-0', opt.value === 'none' ? 'bg-gray-200' : opt.bg)} />
+                    <span className="text-gray-700">{opt.label}</span>
+                    {todo.priority === opt.value && <Check size={10} className="ml-auto text-indigo-500" />}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+
         {!editing && (
           <button
             onClick={() => { setEditing(true); setEditVal(todo.title); }}
-            className="h-6 w-6 flex items-center justify-center rounded text-gray-300 hover:text-gray-600 transition-colors"
+            className="h-6 w-6 flex items-center justify-center rounded text-gray-200 hover:text-gray-600 transition-colors opacity-0 group-hover:opacity-100"
           >
             <Pencil size={11} />
           </button>
         )}
         <button
           onClick={onDelete}
-          className="h-6 w-6 flex items-center justify-center rounded text-gray-300 hover:text-red-500 transition-colors"
+          className="h-6 w-6 flex items-center justify-center rounded text-gray-200 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
         >
           <Trash2 size={11} />
         </button>

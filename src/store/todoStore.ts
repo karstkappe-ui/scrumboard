@@ -2,11 +2,13 @@ import { create } from 'zustand';
 import { generateId } from '@/lib/utils';
 
 export type TodoCategory = 'today' | 'todo' | 'recurring' | 'done';
+export type TodoPriority = 'none' | 'low' | 'medium' | 'high';
 
 export interface Todo {
   id: string;
   title: string;
   category: TodoCategory;
+  priority: TodoPriority;
   order: number;
   createdAt: string;
 }
@@ -18,13 +20,17 @@ interface TodoStore {
   deleteTodo: (id: string) => void;
   moveTodo: (id: string, category: TodoCategory) => void;
   editTodo: (id: string, title: string) => void;
+  setPriority: (id: string, priority: TodoPriority) => void;
   commitReorder: (newTodos: Todo[], originalTodos: Todo[]) => void;
 }
 
 export const useTodoStore = create<TodoStore>()((set, get) => ({
   todos: [],
 
-  _hydrate: (todos) => set({ todos }),
+  _hydrate: (todos) =>
+    set({
+      todos: todos.map((t) => ({ ...t, priority: (t.priority as TodoPriority) ?? 'none' })),
+    }),
 
   addTodo: (title, category) => {
     const todos = get().todos;
@@ -32,6 +38,7 @@ export const useTodoStore = create<TodoStore>()((set, get) => ({
       id: generateId(),
       title,
       category,
+      priority: 'none',
       order: todos.filter((t) => t.category === category).length,
       createdAt: new Date().toISOString(),
     };
@@ -39,7 +46,7 @@ export const useTodoStore = create<TodoStore>()((set, get) => ({
     fetch('/api/todos', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: newTodo.id, title, category, order: newTodo.order }),
+      body: JSON.stringify({ id: newTodo.id, title, category, priority: 'none', order: newTodo.order }),
     }).catch(() => {});
   },
 
@@ -70,8 +77,18 @@ export const useTodoStore = create<TodoStore>()((set, get) => ({
     }).catch(() => {});
   },
 
+  setPriority: (id, priority) => {
+    set((state) => ({
+      todos: state.todos.map((t) => (t.id === id ? { ...t, priority } : t)),
+    }));
+    fetch(`/api/todos/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ priority }),
+    }).catch(() => {});
+  },
+
   commitReorder: (newTodos, originalTodos) => {
-    // Assign order values based on position within each category
     const byCategory: Record<string, Todo[]> = {};
     for (const t of newTodos) {
       if (!byCategory[t.category]) byCategory[t.category] = [];
@@ -84,7 +101,6 @@ export const useTodoStore = create<TodoStore>()((set, get) => ({
 
     set({ todos: withOrders });
 
-    // Fire PATCH only for items that changed category or order
     withOrders.forEach((t) => {
       const orig = originalTodos.find((o) => o.id === t.id);
       if (orig && (orig.category !== t.category || orig.order !== t.order)) {

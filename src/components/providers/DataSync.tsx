@@ -49,7 +49,8 @@ export function DataSync({ children }: { children: React.ReactNode }) {
         });
       }
       if (todosRes.ok) {
-        hydrateTodos(await todosRes.json());
+        const todoData = await todosRes.json();
+        if (Array.isArray(todoData)) hydrateTodos(todoData);
       }
     } catch {
       // silent – will retry next interval

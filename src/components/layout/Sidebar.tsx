@@ -13,6 +13,7 @@ import {
   LogOut,
   CheckSquare,
   Users,
+  CalendarDays,
   X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -30,6 +31,7 @@ const BASE_NAV_ITEMS = [
   { href: '/backlog', label: 'Backlog', icon: List },
   { href: '/sprints', label: 'Sprints', icon: Zap },
   { href: '/team', label: 'Team', icon: Users },
+  { href: '/calendar', label: 'Agenda', icon: CalendarDays },
 ];
 
 const NEWMATE_PROJECT_ID = 'proj-3';

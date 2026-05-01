@@ -97,7 +97,7 @@ function SetupScreen({
           {[
             <>Open <a href="https://calendar.google.com" target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline inline-flex items-center gap-0.5 font-medium">Google Calendar <ExternalLink size={11} /></a></>,
             <>Klik op het tandwiel (⚙) rechtsboven → <strong>Instellingen</strong></>,
-            <>Kies links jouw kalender onder <strong>Mijn agenda's</strong></>,
+            <>Kies links jouw kalender onder <strong>Mijn agenda&apos;s</strong></>,
             <>Scroll naar <strong>Agenda integreren</strong> en kopieer de <strong>insluitcode</strong></>,
             <>Plak de code hieronder</>,
           ].map((step, i) => (

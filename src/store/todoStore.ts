@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { generateId } from '@/lib/utils';
 
-export type TodoCategory = 'today' | 'todo' | 'recurring' | 'done';
+export type TodoCategory = 'nazendingen' | 'today' | 'todo' | 'recurring' | 'done';
 export type TodoPriority = 'none' | 'low' | 'medium' | 'high';
 
 export interface Todo {

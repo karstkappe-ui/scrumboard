@@ -19,7 +19,7 @@ import {
   arrayMove,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Plus, Trash2, Check, RefreshCw, Calendar, ClipboardList, CheckCircle2, Pencil, GripVertical, Flag } from 'lucide-react';
+import { Plus, Trash2, Check, RefreshCw, Calendar, ClipboardList, CheckCircle2, Pencil, GripVertical, Flag, Package } from 'lucide-react';
 import { useTodoStore, type TodoCategory, type TodoPriority, type Todo } from '@/store/todoStore';
 import { useUIStore } from '@/store/uiStore';
 import { useProjectStore } from '@/store/projectStore';
@@ -45,6 +45,15 @@ const COLUMNS: {
   countBg: string;
   empty: string;
 }[] = [
+  {
+    key: 'nazendingen',
+    label: 'Nazendingen',
+    icon: <Package size={16} />,
+    accent: 'text-rose-700',
+    headerBg: 'bg-rose-50 border-rose-200',
+    countBg: 'bg-rose-100 text-rose-700',
+    empty: 'Geen nazendingen',
+  },
   {
     key: 'todo',
     label: 'Nog te doen',
@@ -169,7 +178,7 @@ export default function TodoPage() {
           onDragOver={handleDragOver}
           onDragEnd={handleDragEnd}
         >
-          <div className="grid grid-cols-4 gap-4 h-full">
+          <div className="grid grid-cols-5 gap-4 h-full">
             {COLUMNS.map((col) => {
               const colTodos = displayTodos.filter((t) => t.category === col.key);
               return (

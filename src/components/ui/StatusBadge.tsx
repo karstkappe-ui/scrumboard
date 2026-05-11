@@ -15,11 +15,15 @@ export function StatusBadge({ status, size = 'sm', className }: StatusBadgeProps
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1 rounded-full font-medium',
-        size === 'sm' ? 'px-2 py-0.5 text-xs' : 'px-2.5 py-1 text-xs',
+        'inline-flex items-center gap-1 rounded-full font-semibold tracking-wide',
+        size === 'sm' ? 'px-2 py-0.5 text-[10px]' : 'px-2.5 py-1 text-[11px]',
         className,
       )}
-      style={{ backgroundColor: config.bg, color: config.color }}
+      style={{
+        backgroundColor: config.bg,
+        color: config.color,
+        boxShadow: `inset 0 0 0 1px ${config.color}28`,
+      }}
     >
       <span
         className="h-1.5 w-1.5 rounded-full flex-shrink-0"

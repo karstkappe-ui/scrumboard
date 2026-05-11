@@ -1,7 +1,7 @@
 'use client';
 import { useDraggable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
-import { MessageSquare, Paperclip } from 'lucide-react';
+import { MessageSquare, CheckSquare } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Issue } from '@/types';
 import { MOCK_USERS } from '@/data/users';
@@ -11,6 +11,14 @@ import { PriorityIcon } from '@/components/ui/PriorityIcon';
 import { IssueTypeIcon } from '@/components/ui/IssueTypeIcon';
 import { useUIStore } from '@/store/uiStore';
 import { useIssueStore } from '@/store/issueStore';
+
+const PRIORITY_BORDER: Record<string, string> = {
+  urgent: 'border-l-red-400',
+  high: 'border-l-orange-400',
+  medium: 'border-l-amber-400',
+  low: 'border-l-sky-400',
+  none: 'border-l-gray-200',
+};
 
 interface IssueCardProps {
   issue: Issue;
@@ -31,9 +39,7 @@ export function IssueCard({ issue, isOverlay }: IssueCardProps) {
     disabled: isOverlay,
   });
 
-  const style = transform
-    ? { transform: CSS.Translate.toString(transform) }
-    : undefined;
+  const style = transform ? { transform: CSS.Translate.toString(transform) } : undefined;
 
   return (
     <div
@@ -46,20 +52,22 @@ export function IssueCard({ issue, isOverlay }: IssueCardProps) {
         selectIssue(issue.id);
       }}
       className={cn(
-        'bg-white rounded-lg border border-gray-200 p-3 cursor-pointer select-none',
-        'hover:border-indigo-300 hover:shadow-md transition-all duration-150 group',
-        isDragging && 'opacity-40 rotate-1',
-        isOverlay && 'shadow-panel border-indigo-300 rotate-1 opacity-95',
+        'bg-white rounded-xl border-l-[3px] border border-gray-100 p-3.5 cursor-pointer select-none',
+        'transition-all duration-150 group',
+        'hover:-translate-y-px hover:shadow-card-md hover:border-gray-200',
+        PRIORITY_BORDER[issue.priority ?? 'none'],
+        isDragging && 'opacity-30 scale-[0.98]',
+        isOverlay && 'shadow-lift rotate-[0.5deg] opacity-95 border-indigo-200',
       )}
     >
       {/* Labels */}
       {labels.length > 0 && (
-        <div className="flex flex-wrap gap-1 mb-2">
+        <div className="flex flex-wrap gap-1 mb-2.5">
           {labels.slice(0, 3).map((label) => (
             <span
               key={label.id}
-              className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium"
-              style={{ backgroundColor: `${label.color}15`, color: label.color }}
+              className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-semibold tracking-wide"
+              style={{ backgroundColor: `${label.color}18`, color: label.color }}
             >
               {label.name}
             </span>
@@ -68,20 +76,24 @@ export function IssueCard({ issue, isOverlay }: IssueCardProps) {
       )}
 
       {/* Title */}
-      <p className="text-sm text-gray-800 font-medium leading-snug line-clamp-2 mb-2.5 group-hover:text-gray-900">
+      <p className="text-[13px] text-gray-700 font-medium leading-snug line-clamp-2 mb-3 group-hover:text-gray-900 transition-colors">
         {issue.title}
       </p>
 
       {/* Footer */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-1.5">
           <IssueTypeIcon type={issue.type} size="sm" />
-          <span className="text-[10px] font-mono text-gray-400">{issue.key}</span>
+          <span className="text-[10px] font-mono text-gray-400 tracking-tight">{issue.key}</span>
           <PriorityIcon priority={issue.priority} size="sm" />
         </div>
         <div className="flex items-center gap-2">
           {subtasks.length > 0 && (
-            <span className="text-[10px] text-gray-400">
+            <span className={cn(
+              'flex items-center gap-0.5 text-[10px] font-medium',
+              doneSubtasks === subtasks.length ? 'text-emerald-600' : 'text-gray-400',
+            )}>
+              <CheckSquare size={10} />
               {doneSubtasks}/{subtasks.length}
             </span>
           )}
@@ -92,7 +104,7 @@ export function IssueCard({ issue, isOverlay }: IssueCardProps) {
             </span>
           )}
           {issue.storyPoints !== undefined && (
-            <span className="text-[10px] font-medium text-gray-500 bg-gray-100 rounded px-1.5 py-0.5">
+            <span className="text-[10px] font-semibold text-indigo-600 bg-indigo-50 rounded-md px-1.5 py-0.5">
               {issue.storyPoints}
             </span>
           )}

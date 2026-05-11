@@ -12,13 +12,13 @@ interface BadgeProps {
 }
 
 const variantStyles: Record<BadgeVariant, string> = {
-  default: 'bg-gray-100 text-gray-700',
-  success: 'bg-emerald-50 text-emerald-700',
-  warning: 'bg-amber-50 text-amber-700',
-  danger: 'bg-red-50 text-red-700',
-  info: 'bg-blue-50 text-blue-700',
-  purple: 'bg-violet-50 text-violet-700',
-  outline: 'bg-transparent border border-gray-200 text-gray-600',
+  default: 'bg-gray-100 text-gray-600 ring-1 ring-gray-200/60',
+  success: 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200/60',
+  warning: 'bg-amber-50 text-amber-700 ring-1 ring-amber-200/60',
+  danger: 'bg-red-50 text-red-700 ring-1 ring-red-200/60',
+  info: 'bg-blue-50 text-blue-700 ring-1 ring-blue-200/60',
+  purple: 'bg-violet-50 text-violet-700 ring-1 ring-violet-200/60',
+  outline: 'bg-transparent ring-1 ring-gray-200 text-gray-600',
 };
 
 const dotColors: Record<BadgeVariant, string> = {
@@ -36,7 +36,7 @@ export function Badge({ children, variant = 'default', size = 'sm', className, d
     <span
       className={cn(
         'inline-flex items-center gap-1 font-medium rounded-full',
-        size === 'sm' ? 'px-2 py-0.5 text-xs' : 'px-2.5 py-1 text-xs',
+        size === 'sm' ? 'px-2 py-0.5 text-[11px]' : 'px-2.5 py-1 text-xs',
         variantStyles[variant],
         className,
       )}

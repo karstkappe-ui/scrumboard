@@ -14,6 +14,14 @@ import { useSprintStore } from '@/store/sprintStore';
 import { useProjectStore } from '@/store/projectStore';
 import { useState } from 'react';
 
+const PRIORITY_DOT: Record<string, string> = {
+  urgent: 'bg-red-400',
+  high: 'bg-orange-400',
+  medium: 'bg-amber-400',
+  low: 'bg-sky-400',
+  none: 'bg-gray-200',
+};
+
 interface BacklogItemProps {
   issue: Issue;
   onEdit?: (issue: Issue) => void;
@@ -39,34 +47,41 @@ export function BacklogItem({ issue, onEdit }: BacklogItemProps) {
   return (
     <div
       className={cn(
-        'flex items-center gap-2 px-3 py-2.5 rounded-lg border border-transparent hover:border-gray-200 hover:bg-white group transition-all',
-        'cursor-pointer',
+        'flex items-center gap-2 px-3 py-2 rounded-xl border border-transparent',
+        'hover:border-gray-100 hover:bg-white hover:shadow-card group transition-all duration-150 cursor-pointer',
       )}
       onClick={() => selectIssue(issue.id)}
     >
       {/* Drag handle */}
       <GripVertical
-        size={14}
+        size={13}
         className="text-gray-300 group-hover:text-gray-400 cursor-grab flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
         onClick={(e) => e.stopPropagation()}
       />
 
+      {/* Priority dot */}
+      <span
+        className={cn('h-1.5 w-1.5 rounded-full flex-shrink-0', PRIORITY_DOT[issue.priority ?? 'none'])}
+      />
+
       {/* Type + Key */}
-      <div className="flex items-center gap-1.5 flex-shrink-0">
+      <div className="flex items-center gap-1 flex-shrink-0">
         <IssueTypeIcon type={issue.type} size="sm" />
-        <span className="text-[11px] font-mono text-gray-400 w-16">{issue.key}</span>
+        <span className="text-[10px] font-mono text-gray-400 w-16">{issue.key}</span>
       </div>
 
       {/* Title */}
-      <p className="flex-1 text-sm text-gray-800 font-medium truncate">{issue.title}</p>
+      <p className="flex-1 text-[13px] text-gray-700 font-medium truncate group-hover:text-gray-900 transition-colors">
+        {issue.title}
+      </p>
 
       {/* Labels */}
       <div className="hidden md:flex items-center gap-1 flex-shrink-0">
         {labels.slice(0, 2).map((label) => (
           <span
             key={label.id}
-            className="px-1.5 py-0.5 rounded text-[10px] font-medium"
-            style={{ backgroundColor: `${label.color}15`, color: label.color }}
+            className="px-1.5 py-0.5 rounded-md text-[10px] font-semibold"
+            style={{ backgroundColor: `${label.color}18`, color: label.color }}
           >
             {label.name}
           </span>
@@ -78,19 +93,22 @@ export function BacklogItem({ issue, onEdit }: BacklogItemProps) {
 
       {/* Subtasks */}
       {subtasks.length > 0 && (
-        <span className="text-[11px] text-gray-400 flex-shrink-0">
+        <span className={cn(
+          'text-[10px] font-medium flex-shrink-0',
+          doneSubtasks === subtasks.length ? 'text-emerald-600' : 'text-gray-400',
+        )}>
           {doneSubtasks}/{subtasks.length}
         </span>
       )}
 
       {/* Story points */}
       {issue.storyPoints !== undefined && (
-        <span className="text-xs font-medium text-gray-500 bg-gray-100 rounded px-1.5 py-0.5 flex-shrink-0 w-6 text-center">
+        <span className="text-[10px] font-semibold text-indigo-600 bg-indigo-50 rounded-md px-1.5 py-0.5 flex-shrink-0 w-6 text-center">
           {issue.storyPoints}
         </span>
       )}
 
-      {/* Priority */}
+      {/* Priority icon */}
       <PriorityIcon priority={issue.priority} size="sm" />
 
       {/* Assignee */}
@@ -100,32 +118,32 @@ export function BacklogItem({ issue, onEdit }: BacklogItemProps) {
       <div className="relative flex-shrink-0" onClick={(e) => e.stopPropagation()}>
         <button
           onClick={() => setMenuOpen(!menuOpen)}
-          className="h-6 w-6 flex items-center justify-center rounded hover:bg-gray-100 text-gray-400 hover:text-gray-600 opacity-0 group-hover:opacity-100 transition-opacity"
+          className="h-6 w-6 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 opacity-0 group-hover:opacity-100 transition-all"
         >
-          <MoreHorizontal size={14} />
+          <MoreHorizontal size={13} />
         </button>
         {menuOpen && (
-          <div className="absolute right-0 top-7 z-20 w-44 bg-white border border-gray-200 rounded-lg shadow-panel py-1">
+          <div className="absolute right-0 top-7 z-20 w-44 bg-white border border-gray-100 rounded-xl shadow-panel py-1 animate-scale-in">
             <button
-              className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-gray-700 hover:bg-gray-50"
+              className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-gray-700 hover:bg-gray-50 transition-colors"
               onClick={() => { onEdit?.(issue); setMenuOpen(false); }}
             >
-              <Pencil size={12} /> Edit issue
+              <Pencil size={12} className="text-gray-400" /> Bewerken
             </button>
 
             <div className="relative">
               <button
-                className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-gray-700 hover:bg-gray-50"
+                className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-gray-700 hover:bg-gray-50 transition-colors"
                 onClick={() => setSprintMenuOpen(!sprintMenuOpen)}
               >
-                <ArrowRight size={12} /> Move to sprint
+                <ArrowRight size={12} className="text-gray-400" /> Naar sprint
               </button>
               {sprintMenuOpen && (
-                <div className="absolute left-full top-0 ml-1 w-44 bg-white border border-gray-200 rounded-lg shadow-panel py-1 z-30">
+                <div className="absolute left-full top-0 ml-1 w-44 bg-white border border-gray-100 rounded-xl shadow-panel py-1 z-30 animate-scale-in">
                   {sprints.map((s) => (
                     <button
                       key={s.id}
-                      className="w-full text-left px-3 py-1.5 text-xs text-gray-700 hover:bg-gray-50 truncate"
+                      className="w-full text-left px-3 py-1.5 text-xs text-gray-700 hover:bg-gray-50 truncate transition-colors"
                       onClick={() => { addToSprint(issue.id, s.id); setMenuOpen(false); setSprintMenuOpen(false); }}
                     >
                       {s.name}
@@ -133,10 +151,10 @@ export function BacklogItem({ issue, onEdit }: BacklogItemProps) {
                   ))}
                   {issue.sprintId && (
                     <button
-                      className="w-full text-left px-3 py-1.5 text-xs text-red-600 hover:bg-red-50"
+                      className="w-full text-left px-3 py-1.5 text-xs text-red-600 hover:bg-red-50 transition-colors"
                       onClick={() => { removeFromSprint(issue.id); setMenuOpen(false); setSprintMenuOpen(false); }}
                     >
-                      Remove from sprint
+                      Uit sprint verwijderen
                     </button>
                   )}
                 </div>
@@ -145,10 +163,10 @@ export function BacklogItem({ issue, onEdit }: BacklogItemProps) {
 
             <div className="border-t border-gray-100 my-1" />
             <button
-              className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-red-600 hover:bg-red-50"
+              className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-red-600 hover:bg-red-50 transition-colors"
               onClick={() => { deleteIssue(issue.id); setMenuOpen(false); }}
             >
-              <Trash2 size={12} /> Delete
+              <Trash2 size={12} /> Verwijderen
             </button>
           </div>
         )}

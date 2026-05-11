@@ -10,18 +10,18 @@ interface ProgressBarProps {
   animated?: boolean;
 }
 
-const colorStyles = {
-  indigo: 'bg-indigo-500',
-  emerald: 'bg-emerald-500',
-  amber: 'bg-amber-500',
-  red: 'bg-red-500',
-  blue: 'bg-blue-500',
+const colorGradients = {
+  indigo: 'from-indigo-400 to-indigo-500',
+  emerald: 'from-emerald-400 to-emerald-500',
+  amber: 'from-amber-400 to-amber-500',
+  red: 'from-red-400 to-red-500',
+  blue: 'from-blue-400 to-blue-500',
 };
 
 const sizeStyles = {
   sm: 'h-1',
   md: 'h-1.5',
-  lg: 'h-2.5',
+  lg: 'h-2',
 };
 
 export function ProgressBar({
@@ -31,7 +31,6 @@ export function ProgressBar({
   color = 'indigo',
   showLabel,
   className,
-  animated,
 }: ProgressBarProps) {
   const percentage = Math.min(100, Math.round((value / max) * 100));
 
@@ -40,14 +39,17 @@ export function ProgressBar({
       <div className={cn('flex-1 rounded-full bg-gray-100 overflow-hidden', sizeStyles[size])}>
         <div
           className={cn(
-            'h-full rounded-full transition-all duration-500',
-            colorStyles[color],
-            animated && 'transition-all',
+            'h-full rounded-full bg-gradient-to-r transition-all duration-500 ease-out',
+            colorGradients[color],
           )}
           style={{ width: `${percentage}%` }}
         />
       </div>
-      {showLabel && <span className="text-xs font-medium text-gray-500 w-8 text-right">{percentage}%</span>}
+      {showLabel && (
+        <span className="text-[11px] font-semibold text-gray-400 w-7 text-right tabular-nums">
+          {percentage}%
+        </span>
+      )}
     </div>
   );
 }

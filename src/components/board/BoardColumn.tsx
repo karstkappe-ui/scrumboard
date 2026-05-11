@@ -18,12 +18,20 @@ export function BoardColumn({ status, label, color, count, children }: BoardColu
   const { setNodeRef, isOver } = useDroppable({ id: status });
 
   return (
-    <div className="flex flex-col min-w-[260px] w-[260px] flex-shrink-0">
+    <div className="flex flex-col min-w-[272px] w-[272px] flex-shrink-0">
       {/* Column header */}
       <div className="flex items-center gap-2 mb-3 px-1">
-        <span className="h-2.5 w-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
-        <span className="text-xs font-semibold text-gray-700 uppercase tracking-wide">{label}</span>
-        <span className="ml-auto text-xs font-medium text-gray-400 bg-gray-100 rounded-full px-1.5 py-0.5 min-w-[20px] text-center">
+        <span
+          className="h-2 w-2 rounded-full flex-shrink-0"
+          style={{ backgroundColor: color }}
+        />
+        <span className="text-[11px] font-semibold text-gray-600 uppercase tracking-[0.07em] flex-1 truncate">
+          {label}
+        </span>
+        <span
+          className="text-[11px] font-semibold tabular-nums rounded-full px-1.5 py-0.5 min-w-[20px] text-center"
+          style={{ backgroundColor: `${color}18`, color }}
+        >
           {count}
         </span>
       </div>
@@ -32,16 +40,18 @@ export function BoardColumn({ status, label, color, count, children }: BoardColu
       <div
         ref={setNodeRef}
         className={cn(
-          'flex-1 rounded-xl p-2 space-y-2 min-h-[200px] transition-colors duration-150',
-          isOver ? 'bg-indigo-50/80 ring-2 ring-indigo-200' : 'bg-gray-100/60',
+          'flex-1 rounded-2xl p-2 space-y-2 min-h-[200px] transition-all duration-150',
+          isOver
+            ? 'bg-indigo-50 ring-2 ring-indigo-300 ring-offset-0'
+            : 'bg-gray-100/70',
         )}
       >
         {count === 0 && !isOver ? (
           <EmptyState
-            icon={<Inbox size={24} />}
-            title="No issues"
+            icon={<Inbox size={22} />}
+            title="Geen issues"
             compact
-            className="text-gray-300"
+            className="text-gray-300 py-6"
           />
         ) : (
           children

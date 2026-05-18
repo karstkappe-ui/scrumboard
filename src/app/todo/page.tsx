@@ -1,6 +1,6 @@
 'use client';
-import { useState, useRef } from 'react';
-import { redirect } from 'next/navigation';
+import { useState, useRef, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   DndContext,
   DragOverlay,
@@ -93,6 +93,7 @@ const COLUMNS: {
 ];
 
 export default function TodoPage() {
+  const router = useRouter();
   const { currentUserId } = useUIStore();
   const { activeProjectId } = useProjectStore();
   const { todos, addTodo, deleteTodo, editTodo, setPriority, commitReorder } = useTodoStore();
@@ -105,9 +106,16 @@ export default function TodoPage() {
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
   );
 
-  if (currentUserId !== KARST_USER_ID || activeProjectId !== NEWMATE_PROJECT_ID) {
-    redirect('/');
-  }
+  const isAuthorized = currentUserId === KARST_USER_ID && activeProjectId === NEWMATE_PROJECT_ID;
+
+  useEffect(() => {
+    if (currentUserId && !isAuthorized) {
+      router.replace('/');
+    }
+  }, [currentUserId, isAuthorized, router]);
+
+  // While loading or unauthorized, render nothing
+  if (!currentUserId || !isAuthorized) return null;
 
   const displayTodos = previewTodos ?? todos;
   const activeTodo = activeId ? displayTodos.find((t) => t.id === activeId) : null;

@@ -18,9 +18,9 @@ export function BoardColumn({ status, label, color, count, children }: BoardColu
   const { setNodeRef, isOver } = useDroppable({ id: status });
 
   return (
-    <div className="flex flex-col min-w-[272px] w-[272px] flex-shrink-0">
+    <div className="flex flex-col min-w-[272px] w-[272px] flex-shrink-0 h-full min-h-0">
       {/* Column header */}
-      <div className="flex items-center gap-2 mb-3 px-1">
+      <div className="flex items-center gap-2 mb-3 px-1 flex-shrink-0">
         <span
           className="h-2 w-2 rounded-full flex-shrink-0"
           style={{ backgroundColor: color }}
@@ -36,11 +36,11 @@ export function BoardColumn({ status, label, color, count, children }: BoardColu
         </span>
       </div>
 
-      {/* Drop zone */}
+      {/* Drop zone — scrolls independently */}
       <div
         ref={setNodeRef}
         className={cn(
-          'flex-1 rounded-2xl p-2 space-y-2 min-h-[200px] transition-all duration-150',
+          'flex-1 min-h-0 rounded-2xl p-2 space-y-2 overflow-y-auto scrollbar-thin transition-all duration-150',
           isOver
             ? 'bg-indigo-50 ring-2 ring-indigo-300 ring-offset-0'
             : 'bg-gray-100/70',

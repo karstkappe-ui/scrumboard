@@ -58,7 +58,7 @@ export function KanbanBoard({ sprintId }: KanbanBoardProps) {
 
   return (
     <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-      <div className="flex gap-4 h-full pb-4">
+      <div className="flex gap-4 h-full min-h-0 pb-2">
         {BOARD_COLUMNS.map((col) => {
           const colIssues = filteredIssues.filter((i) => i.status === col.status);
           return (

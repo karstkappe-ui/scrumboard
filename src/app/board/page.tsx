@@ -43,7 +43,7 @@ export default function BoardPage() {
             <div className="flex-shrink-0">
               <BoardFilters />
             </div>
-            <div className="flex-1 overflow-x-auto overflow-y-hidden scrollbar-thin">
+            <div className="flex-1 min-h-0 overflow-x-auto overflow-y-hidden scrollbar-thin">
               <KanbanBoard sprintId={sprint.id} />
             </div>
           </>

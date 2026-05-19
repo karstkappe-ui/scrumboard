@@ -96,7 +96,7 @@ export default function TodoPage() {
   const router = useRouter();
   const { currentUserId } = useUIStore();
   const { activeProjectId } = useProjectStore();
-  const { todos, addTodo, deleteTodo, editTodo, setPriority, commitReorder } = useTodoStore();
+  const { todos, addTodo, deleteTodo, editTodo, setPriority, commitReorder, moveTodo } = useTodoStore();
 
   const [previewTodos, setPreviewTodos] = useState<Todo[] | null>(null);
   const originalRef = useRef<Todo[]>([]);
@@ -199,6 +199,9 @@ export default function TodoPage() {
                   onDelete={(id) => deleteTodo(id)}
                   onEdit={(id, title) => editTodo(id, title)}
                   onChangePriority={(id, p) => setPriority(id, p)}
+                  onToggleDone={(id, currentCategory) =>
+                    moveTodo(id, currentCategory === 'done' ? 'todo' : 'done')
+                  }
                 />
               );
             })}
@@ -226,6 +229,7 @@ function DroppableColumn({
   onDelete,
   onEdit,
   onChangePriority,
+  onToggleDone,
 }: {
   column: (typeof COLUMNS)[number];
   todos: Todo[];
@@ -234,6 +238,7 @@ function DroppableColumn({
   onDelete: (id: string) => void;
   onEdit: (id: string, title: string) => void;
   onChangePriority: (id: string, p: TodoPriority) => void;
+  onToggleDone: (id: string, currentCategory: TodoCategory) => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: column.key });
   const [adding, setAdding] = useState(false);
@@ -282,6 +287,7 @@ function DroppableColumn({
               onDelete={() => onDelete(todo.id)}
               onEdit={(title) => onEdit(todo.id, title)}
               onChangePriority={(p) => onChangePriority(todo.id, p)}
+              onToggleDone={() => onToggleDone(todo.id, todo.category)}
             />
           ))}
         </SortableContext>
@@ -329,6 +335,7 @@ function SortableTodoCard({
   onDelete,
   onEdit,
   onChangePriority,
+  onToggleDone,
 }: {
   todo: Todo;
   isDone: boolean;
@@ -336,6 +343,7 @@ function SortableTodoCard({
   onDelete: () => void;
   onEdit: (title: string) => void;
   onChangePriority: (p: TodoPriority) => void;
+  onToggleDone: () => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: todo.id });
   const [editing, setEditing] = useState(false);
@@ -373,14 +381,17 @@ function SortableTodoCard({
       </button>
 
       {/* Checkbox */}
-      <div
+      <button
+        onClick={(e) => { e.stopPropagation(); onToggleDone(); }}
         className={cn(
-          'mt-0.5 h-4 w-4 rounded border flex items-center justify-center flex-shrink-0',
-          isDone ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-gray-300',
+          'mt-0.5 h-4 w-4 rounded border flex items-center justify-center flex-shrink-0 transition-all duration-150 cursor-pointer hover:scale-110',
+          isDone
+            ? 'bg-emerald-500 border-emerald-500 text-white'
+            : 'border-gray-300 hover:border-emerald-400 hover:bg-emerald-50',
         )}
       >
         {isDone && <Check size={10} />}
-      </div>
+      </button>
 
       {/* Title */}
       {editing ? (

@@ -12,6 +12,11 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     const data: Record<string, unknown> = { ...body, updatedAt: new Date() };
     if (data.createdAt) delete data.createdAt;
 
+    // When moving back to backlog, also reset status to 'backlog'
+    if ('sprintId' in data && data.sprintId === null && !('status' in data)) {
+      data.status = 'backlog';
+    }
+
     const issue = await prisma.issue.update({
       where: { id: params.id },
       data,

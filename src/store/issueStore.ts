@@ -116,7 +116,12 @@ export const useIssueStore = create<IssueStore>()((set, get) => ({
         },
       };
     });
-    api(`/api/issues/${id}`, 'PATCH', { ...changes });
+    // undefined values are stripped by JSON.stringify — convert to null so the
+    // server actually clears the field (e.g. sprintId → backlog)
+    const apiChanges = Object.fromEntries(
+      Object.entries(changes).map(([k, v]) => [k, v === undefined ? null : v]),
+    );
+    api(`/api/issues/${id}`, 'PATCH', apiChanges);
     const { useUIStore } = require('./uiStore');
     get().logActivity({ issueId: id, userId: useUIStore.getState().currentUserId || 'user-1', action: 'issue_updated' });
   },

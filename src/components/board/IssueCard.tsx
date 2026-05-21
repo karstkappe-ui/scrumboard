@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 import type { Issue } from '@/types';
 import { MOCK_USERS } from '@/data/users';
 import { MOCK_LABELS } from '@/data/labels';
-import { Avatar } from '@/components/ui/Avatar';
+import { Avatar, AvatarGroup } from '@/components/ui/Avatar';
 import { PriorityIcon } from '@/components/ui/PriorityIcon';
 import { IssueTypeIcon } from '@/components/ui/IssueTypeIcon';
 import { useUIStore } from '@/store/uiStore';
@@ -29,6 +29,7 @@ export function IssueCard({ issue, isOverlay }: IssueCardProps) {
   const { selectIssue } = useUIStore();
   const { getSubtasks, getIssueComments } = useIssueStore();
   const assignee = MOCK_USERS.find((u) => u.id === issue.assigneeId);
+  const assignees = MOCK_USERS.filter((u) => (issue.assigneeIds ?? []).includes(u.id));
   const labels = MOCK_LABELS.filter((l) => issue.labelIds.includes(l.id));
   const subtasks = getSubtasks(issue.id);
   const doneSubtasks = subtasks.filter((s) => s.status === 'done').length;
@@ -108,7 +109,11 @@ export function IssueCard({ issue, isOverlay }: IssueCardProps) {
               {issue.storyPoints}
             </span>
           )}
-          <Avatar user={assignee} size="xs" />
+          {assignees.length > 1 ? (
+            <AvatarGroup users={assignees} max={3} size="xs" />
+          ) : (
+            <Avatar user={assignee} size="xs" />
+          )}
         </div>
       </div>
     </div>

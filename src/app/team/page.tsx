@@ -46,9 +46,13 @@ export default function TeamPage() {
     activeSprint ? projectIssues.filter((i) => i.sprintId === activeSprint.id).map((i) => i.id) : [],
   );
 
+  function issueAssigneeIds(i: (typeof projectIssues)[0]) {
+    return i.assigneeIds?.length ? i.assigneeIds : i.assigneeId ? [i.assigneeId] : [];
+  }
+
   function getIssuesForUser(userId: string) {
     return projectIssues
-      .filter((i) => i.assigneeId === userId)
+      .filter((i) => issueAssigneeIds(i).includes(userId))
       .sort((a, b) => {
         const statusDiff = STATUS_SORT[a.status] - STATUS_SORT[b.status];
         if (statusDiff !== 0) return statusDiff;
@@ -57,10 +61,10 @@ export default function TeamPage() {
   }
 
   const usersWithWork = MOCK_USERS.filter((u) =>
-    projectIssues.some((i) => i.assigneeId === u.id),
+    projectIssues.some((i) => issueAssigneeIds(i).includes(u.id)),
   );
   const unassignedOpen = projectIssues.filter(
-    (i) => !i.assigneeId && OPEN_STATUSES.includes(i.status),
+    (i) => issueAssigneeIds(i).length === 0 && OPEN_STATUSES.includes(i.status),
   );
 
   const focusUser = selectedUser ?? usersWithWork[0]?.id ?? null;

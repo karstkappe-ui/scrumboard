@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/Button';
 import { formatShortDate, getStoryPointProgress, getSprintProgress, getSprintDaysRemaining } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
+import { useConfetti } from '@/hooks/useConfetti';
 
 interface SprintCardProps {
   sprint: Sprint;
@@ -18,6 +19,7 @@ interface SprintCardProps {
 export function SprintCard({ sprint, onEdit }: SprintCardProps) {
   const { startSprint, completeSprint, deleteSprint } = useSprintStore();
   const { getIssuesBySprint } = useIssueStore();
+  const { fireCelebration } = useConfetti();
   const [menuOpen, setMenuOpen] = useState(false);
 
   const issues = getIssuesBySprint(sprint.id);
@@ -142,7 +144,7 @@ export function SprintCard({ sprint, onEdit }: SprintCardProps) {
             variant="primary"
             size="sm"
             leftIcon={<Play size={13} />}
-            onClick={() => startSprint(sprint.id)}
+            onClick={() => { startSprint(sprint.id); fireCelebration('start'); }}
           >
             Start Sprint
           </Button>
@@ -152,7 +154,7 @@ export function SprintCard({ sprint, onEdit }: SprintCardProps) {
             variant="secondary"
             size="sm"
             leftIcon={<CheckCircle2 size={13} />}
-            onClick={() => completeSprint(sprint.id)}
+            onClick={() => { completeSprint(sprint.id); fireCelebration('complete'); }}
             className="text-emerald-600 border-emerald-200 hover:bg-emerald-50"
           >
             Complete Sprint

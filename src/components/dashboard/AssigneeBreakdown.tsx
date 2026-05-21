@@ -15,7 +15,10 @@ export function AssigneeBreakdown() {
   const issues = sprint ? getIssuesBySprint(sprint.id) : [];
 
   const data = MOCK_USERS.map((user) => {
-    const assigned = issues.filter((i) => i.assigneeId === user.id);
+    const assigned = issues.filter((i) => {
+      const ids = i.assigneeIds?.length ? i.assigneeIds : i.assigneeId ? [i.assigneeId] : [];
+      return ids.includes(user.id);
+    });
     const done = assigned.filter((i) => i.status === 'done').length;
     return { user, total: assigned.length, done };
   })

@@ -57,7 +57,15 @@ export const useIssueStore = create<IssueStore>()((set, get) => ({
   _hydrate: ({ issues, comments, activity }) => {
     const grouped = groupComments(comments);
     const counters: Record<string, number> = {};
-    for (const issue of issues) {
+    const hydratedIssues = issues.map((issue) => ({
+      ...issue,
+      assigneeIds: issue.assigneeIds?.length
+        ? issue.assigneeIds
+        : issue.assigneeId
+          ? [issue.assigneeId]
+          : [],
+    }));
+    for (const issue of hydratedIssues) {
       const match = issue.key.match(/-(\d+)$/);
       if (match) {
         const num = parseInt(match[1], 10);
@@ -66,7 +74,7 @@ export const useIssueStore = create<IssueStore>()((set, get) => ({
         }
       }
     }
-    set({ issues: toRecord(issues), comments: grouped, activity, issueCounters: counters });
+    set({ issues: toRecord(hydratedIssues), comments: grouped, activity, issueCounters: counters });
   },
 
   createIssue: (input) => {
@@ -75,6 +83,11 @@ export const useIssueStore = create<IssueStore>()((set, get) => ({
     const now = new Date().toISOString();
     const { useUIStore } = require('./uiStore');
     const currentUserId = useUIStore.getState().currentUserId || 'user-1';
+    const resolvedAssigneeIds = input.assigneeIds?.length
+      ? input.assigneeIds
+      : input.assigneeId
+        ? [input.assigneeId]
+        : [];
     const newIssue: Issue = {
       id: generateId(),
       key: `${input.projectKey}-${counter}`,
@@ -83,7 +96,8 @@ export const useIssueStore = create<IssueStore>()((set, get) => ({
       type: input.type,
       status: input.status,
       priority: input.priority,
-      assigneeId: input.assigneeId,
+      assigneeId: resolvedAssigneeIds[0],
+      assigneeIds: resolvedAssigneeIds,
       reporterId: currentUserId,
       sprintId: input.sprintId,
       epicId: input.epicId,

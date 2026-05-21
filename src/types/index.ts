@@ -63,6 +63,7 @@ export interface Issue {
   status: IssueStatus;
   priority: Priority;
   assigneeId?: string;
+  assigneeIds: string[];
   reporterId: string;
   sprintId?: string;
   epicId?: string;
@@ -105,6 +106,7 @@ export interface CreateIssueInput {
   priority: Priority;
   status: IssueStatus;
   assigneeId?: string;
+  assigneeIds?: string[];
   sprintId?: string;
   epicId?: string;
   parentId?: string;

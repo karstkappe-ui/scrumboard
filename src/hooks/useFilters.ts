@@ -15,7 +15,9 @@ export function useFilteredIssues(issues: Issue[]): Issue[] {
         if (!matchesTitle && !matchesKey) return false;
       }
       if (filters.assigneeIds.length > 0) {
-        if (!issue.assigneeId || !filters.assigneeIds.includes(issue.assigneeId)) return false;
+        const ids = issue.assigneeIds?.length ? issue.assigneeIds : issue.assigneeId ? [issue.assigneeId] : [];
+        const matches = filters.assigneeIds.some((id) => ids.includes(id));
+        if (!matches) return false;
       }
       if (filters.priorities.length > 0) {
         if (!filters.priorities.includes(issue.priority)) return false;

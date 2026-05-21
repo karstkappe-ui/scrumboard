@@ -25,6 +25,7 @@ export async function POST(req: NextRequest) {
         parentId: body.parentId ?? null,
         storyPoints: body.storyPoints ?? null,
         labelIds: body.labelIds ?? [],
+        assigneeIds: body.assigneeIds ?? [],
         acceptanceCriteria: body.acceptanceCriteria ?? null,
         order: body.order ?? 0,
         projectId: body.projectId,

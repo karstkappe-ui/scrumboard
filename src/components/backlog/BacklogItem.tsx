@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils';
 import type { Issue } from '@/types';
 import { MOCK_USERS } from '@/data/users';
 import { MOCK_LABELS } from '@/data/labels';
-import { Avatar } from '@/components/ui/Avatar';
+import { Avatar, AvatarGroup } from '@/components/ui/Avatar';
 import { PriorityIcon } from '@/components/ui/PriorityIcon';
 import { IssueTypeIcon } from '@/components/ui/IssueTypeIcon';
 import { StatusBadge } from '@/components/ui/StatusBadge';
@@ -37,6 +37,7 @@ export function BacklogItem({ issue, onEdit }: BacklogItemProps) {
 
   const project = getActiveProject();
   const assignee = MOCK_USERS.find((u) => u.id === issue.assigneeId);
+  const assignees = MOCK_USERS.filter((u) => (issue.assigneeIds ?? []).includes(u.id));
   const labels = MOCK_LABELS.filter((l) => issue.labelIds.includes(l.id));
   const subtasks = getSubtasks(issue.id);
   const doneSubtasks = subtasks.filter((s) => s.status === 'done').length;
@@ -111,8 +112,12 @@ export function BacklogItem({ issue, onEdit }: BacklogItemProps) {
       {/* Priority icon */}
       <PriorityIcon priority={issue.priority} size="sm" />
 
-      {/* Assignee */}
-      <Avatar user={assignee} size="xs" />
+      {/* Assignee(s) */}
+      {assignees.length > 1 ? (
+        <AvatarGroup users={assignees} max={3} size="xs" />
+      ) : (
+        <Avatar user={assignee} size="xs" />
+      )}
 
       {/* Actions menu */}
       <div className="relative flex-shrink-0" onClick={(e) => e.stopPropagation()}>

@@ -69,6 +69,7 @@ model Issue {
   parentId           String?
   storyPoints        Int?
   labelIds           String[]
+  assigneeIds        String[]  @default([])
   acceptanceCriteria String?
   order              Int      @default(0)
   projectId          String

@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { X, Copy, Pencil } from 'lucide-react';
 import { useIssueStore } from '@/store/issueStore';
 import { useSprintStore } from '@/store/sprintStore';
@@ -9,6 +9,7 @@ import { MOCK_USERS } from '@/data/users';
 import { MOCK_LABELS } from '@/data/labels';
 import { ISSUE_TYPES, PRIORITIES, ISSUE_STATUSES, STORY_POINTS } from '@/lib/constants';
 import { Avatar } from '@/components/ui/Avatar';
+import { UserPlus, X as XIcon } from 'lucide-react';
 import { PriorityIcon } from '@/components/ui/PriorityIcon';
 import { IssueTypeIcon } from '@/components/ui/IssueTypeIcon';
 import { StatusBadge } from '@/components/ui/StatusBadge';
@@ -27,11 +28,37 @@ export function IssueDetailPanel() {
   const [titleValue, setTitleValue] = useState('');
   const [activeTab, setActiveTab] = useState<'details' | 'activity'>('details');
 
+  const [assigneePickerOpen, setAssigneePickerOpen] = useState(false);
+  const assigneePickerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!assigneePickerOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (assigneePickerRef.current && !assigneePickerRef.current.contains(e.target as Node)) {
+        setAssigneePickerOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [assigneePickerOpen]);
+
   const issue = selectedIssueId ? issues[selectedIssueId] : null;
   if (!issue) return null;
 
-  const assignee = MOCK_USERS.find((u) => u.id === issue.assigneeId);
+  const assigneeIds = issue.assigneeIds ?? (issue.assigneeId ? [issue.assigneeId] : []);
+  const assignees = MOCK_USERS.filter((u) => assigneeIds.includes(u.id));
   const reporter = MOCK_USERS.find((u) => u.id === issue.reporterId);
+
+  const toggleAssignee = (userId: string) => {
+    const current = issue.assigneeIds ?? (issue.assigneeId ? [issue.assigneeId] : []);
+    const next = current.includes(userId)
+      ? current.filter((id) => id !== userId)
+      : [...current, userId];
+    updateIssue(issue.id, {
+      assigneeIds: next,
+      assigneeId: next[0],
+    });
+  };
   const labels = MOCK_LABELS.filter((l) => issue.labelIds.includes(l.id));
   const project = getActiveProject();
   const sprints = project ? getSprintsByProject(project.id) : [];
@@ -156,18 +183,50 @@ export function IssueDetailPanel() {
                   </Field>
 
                   <Field label="Toegewezen aan">
-                    <div className="flex items-center gap-1.5">
-                      <Avatar user={assignee} size="xs" />
-                      <select
-                        value={issue.assigneeId ?? ''}
-                        onChange={(e) => updateIssue(issue.id, { assigneeId: e.target.value || undefined })}
-                        className="text-[13px] border-0 bg-transparent p-0 focus:ring-0 cursor-pointer text-gray-700"
-                      >
-                        <option value="">Niet toegewezen</option>
-                        {MOCK_USERS.map((u) => (
-                          <option key={u.id} value={u.id}>{u.name}</option>
+                    <div className="relative" ref={assigneePickerRef}>
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        {assignees.map((u) => (
+                          <span
+                            key={u.id}
+                            className="inline-flex items-center gap-1 pl-0.5 pr-1.5 py-0.5 rounded-full text-[11px] font-medium text-white"
+                            style={{ backgroundColor: u.color }}
+                          >
+                            <Avatar user={u} size="xs" />
+                            {u.name.split(' ')[0]}
+                            <button
+                              onClick={() => toggleAssignee(u.id)}
+                              className="opacity-70 hover:opacity-100 transition-opacity ml-0.5"
+                            >
+                              <XIcon size={10} />
+                            </button>
+                          </span>
                         ))}
-                      </select>
+                        <button
+                          onClick={() => setAssigneePickerOpen((o) => !o)}
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] text-gray-500 bg-gray-100 hover:bg-gray-200 transition-colors font-medium"
+                        >
+                          <UserPlus size={11} />
+                          {assignees.length === 0 ? 'Toewijzen' : 'Toevoegen'}
+                        </button>
+                      </div>
+                      {assigneePickerOpen && (
+                        <div className="absolute left-0 top-full mt-1 z-50 w-48 bg-white border border-gray-100 rounded-xl shadow-panel py-1 animate-scale-in">
+                          {MOCK_USERS.map((u) => {
+                            const selected = assigneeIds.includes(u.id);
+                            return (
+                              <button
+                                key={u.id}
+                                onClick={() => toggleAssignee(u.id)}
+                                className="w-full flex items-center gap-2 px-3 py-1.5 hover:bg-gray-50 transition-colors text-left"
+                              >
+                                <Avatar user={u} size="xs" />
+                                <span className="text-[13px] text-gray-700 flex-1">{u.name}</span>
+                                {selected && <span className="text-indigo-500 text-xs font-bold">✓</span>}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
                   </Field>
 

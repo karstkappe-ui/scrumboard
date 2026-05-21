@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 
 export function useConfetti() {
-  const fireCelebration = useCallback(async (type: 'start' | 'complete') => {
+  const fireCelebration = useCallback(async (type: 'start' | 'complete' | 'move') => {
     const confetti = (await import('canvas-confetti')).default;
 
     if (type === 'complete') {
@@ -16,13 +16,25 @@ export function useConfetti() {
       fire(0.35, { spread: 100, decay: 0.91, scalar: 0.8 });
       fire(0.1, { spread: 120, startVelocity: 25, decay: 0.92, scalar: 1.2 });
       fire(0.1, { spread: 120, startVelocity: 45 });
-    } else {
-      // Smaller burst for sprint start
+    } else if (type === 'start') {
+      // Medium burst for sprint start
       confetti({
         particleCount: 80,
         spread: 70,
         origin: { y: 0.6 },
         colors: ['#6366F1', '#8B5CF6', '#EC4899', '#10B981'],
+        zIndex: 9999,
+      });
+    } else {
+      // Tiny playful burst when dragging a card between columns
+      confetti({
+        particleCount: 30,
+        spread: 45,
+        startVelocity: 30,
+        decay: 0.88,
+        scalar: 0.75,
+        origin: { y: 0.5 },
+        colors: ['#6366F1', '#8B5CF6', '#F59E0B', '#10B981', '#EC4899'],
         zIndex: 9999,
       });
     }

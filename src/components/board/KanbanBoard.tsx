@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import { useConfetti } from '@/hooks/useConfetti';
 import {
   DndContext,
   DragOverlay,
@@ -23,6 +24,7 @@ interface KanbanBoardProps {
 
 export function KanbanBoard({ sprintId }: KanbanBoardProps) {
   const { issues, moveIssueToStatus, getIssuesBySprint } = useIssueStore();
+  const { fireCelebration } = useConfetti();
   const [activeId, setActiveId] = useState<string | null>(null);
 
   const sprintIssues = getIssuesBySprint(sprintId).filter((i) => i.type !== 'subtask');
@@ -45,13 +47,19 @@ export function KanbanBoard({ sprintId }: KanbanBoardProps) {
 
     const overId = over.id as string;
     const isColumn = BOARD_COLUMNS.some((c) => c.status === overId);
+    const draggedIssue = issues[active.id as string];
 
     if (isColumn) {
-      moveIssueToStatus(active.id as string, overId as IssueStatus);
+      const newStatus = overId as IssueStatus;
+      if (draggedIssue && draggedIssue.status !== newStatus) {
+        moveIssueToStatus(active.id as string, newStatus);
+        fireCelebration(newStatus === 'done' ? 'complete' : 'move');
+      }
     } else {
       const overIssue = issues[overId];
-      if (overIssue) {
+      if (overIssue && draggedIssue && draggedIssue.status !== overIssue.status) {
         moveIssueToStatus(active.id as string, overIssue.status);
+        fireCelebration(overIssue.status === 'done' ? 'complete' : 'move');
       }
     }
   };

@@ -14,6 +14,7 @@ import {
   CheckSquare,
   Users,
   CalendarDays,
+  Camera,
   X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -56,7 +57,11 @@ export function Sidebar() {
 
   const showMijnTaken = currentUserId === KARST_USER_ID && activeProjectId === NEWMATE_PROJECT_ID;
   const navItems = showMijnTaken
-    ? [...BASE_NAV_ITEMS, { href: '/todo', label: 'Mijn taken', icon: CheckSquare }]
+    ? [
+        ...BASE_NAV_ITEMS,
+        { href: '/todo', label: 'Mijn taken', icon: CheckSquare },
+        { href: '/ugc',  label: 'UGC Planning', icon: Camera },
+      ]
     : BASE_NAV_ITEMS;
 
   return (

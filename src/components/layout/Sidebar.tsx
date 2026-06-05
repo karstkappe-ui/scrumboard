@@ -15,6 +15,7 @@ import {
   Users,
   CalendarDays,
   Camera,
+  Handshake,
   X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -36,6 +37,7 @@ const BASE_NAV_ITEMS = [
 ];
 
 const NEWMATE_PROJECT_ID = 'proj-3';
+const ICEO_PROJECT_ID = 'proj-1';
 const KARST_USER_ID = 'user-1';
 
 export function Sidebar() {
@@ -56,13 +58,18 @@ export function Sidebar() {
   }, [pathname, closeSidebar]);
 
   const showMijnTaken = currentUserId === KARST_USER_ID && activeProjectId === NEWMATE_PROJECT_ID;
-  const navItems = showMijnTaken
-    ? [
-        ...BASE_NAV_ITEMS,
-        { href: '/todo', label: 'Mijn taken', icon: CheckSquare },
-        { href: '/ugc',  label: 'UGC Planning', icon: Camera },
-      ]
-    : BASE_NAV_ITEMS;
+  const showDeals = currentUserId === KARST_USER_ID && activeProjectId === ICEO_PROJECT_ID;
+
+  const navItems = [
+    ...BASE_NAV_ITEMS,
+    ...(showMijnTaken ? [
+      { href: '/todo', label: 'Mijn taken', icon: CheckSquare },
+      { href: '/ugc',  label: 'UGC Planning', icon: Camera },
+    ] : []),
+    ...(showDeals ? [
+      { href: '/deals', label: 'Deals', icon: Handshake },
+    ] : []),
+  ];
 
   return (
     <aside

@@ -16,6 +16,7 @@ export async function GET() {
         "title",
         "category",
         COALESCE("priority", 'none') AS "priority",
+        COALESCE("label", 'none') AS "label",
         CAST("order" AS INTEGER) AS "order",
         to_char("createdAt" AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS "createdAt",
         to_char("updatedAt" AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS "updatedAt"
@@ -38,9 +39,10 @@ export async function POST(req: NextRequest) {
   const body = await req.json();
 
   const priority = body.priority ?? 'none';
+  const label = body.label ?? 'none';
   await prisma.$executeRaw`
-    INSERT INTO "Todo" ("id", "userId", "title", "category", "priority", "order", "createdAt", "updatedAt")
-    VALUES (${body.id}, ${userId}, ${body.title}, ${body.category}, ${priority}, ${body.order}, NOW(), NOW())
+    INSERT INTO "Todo" ("id", "userId", "title", "category", "priority", "label", "order", "createdAt", "updatedAt")
+    VALUES (${body.id}, ${userId}, ${body.title}, ${body.category}, ${priority}, ${label}, ${body.order}, NOW(), NOW())
   `;
   return NextResponse.json({ ok: true }, { status: 201 });
 }

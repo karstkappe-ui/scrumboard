@@ -1,14 +1,16 @@
 import { create } from 'zustand';
 import { generateId } from '@/lib/utils';
 
-export type TodoCategory = 'nazendingen' | 'today' | 'todo' | 'recurring' | 'done';
+export type TodoCategory = 'nazendingen' | 'today' | 'todo' | 'recurring' | 'deze_maand' | 'done';
 export type TodoPriority = 'none' | 'low' | 'medium' | 'high';
+export type TodoLabel = 'none' | 'groei' | 'onderhoud' | 'operationeel';
 
 export interface Todo {
   id: string;
   title: string;
   category: TodoCategory;
   priority: TodoPriority;
+  label: TodoLabel;
   order: number;
   createdAt: string;
 }
@@ -21,6 +23,7 @@ interface TodoStore {
   moveTodo: (id: string, category: TodoCategory) => void;
   editTodo: (id: string, title: string) => void;
   setPriority: (id: string, priority: TodoPriority) => void;
+  setLabel: (id: string, label: TodoLabel) => void;
   commitReorder: (newTodos: Todo[], originalTodos: Todo[]) => void;
 }
 
@@ -29,7 +32,11 @@ export const useTodoStore = create<TodoStore>()((set, get) => ({
 
   _hydrate: (todos) =>
     set({
-      todos: todos.map((t) => ({ ...t, priority: (t.priority as TodoPriority) ?? 'none' })),
+      todos: todos.map((t) => ({
+        ...t,
+        priority: (t.priority as TodoPriority) ?? 'none',
+        label: (t.label as TodoLabel) ?? 'none',
+      })),
     }),
 
   addTodo: (title, category) => {
@@ -39,6 +46,7 @@ export const useTodoStore = create<TodoStore>()((set, get) => ({
       title,
       category,
       priority: 'none',
+      label: 'none',
       order: todos.filter((t) => t.category === category).length,
       createdAt: new Date().toISOString(),
     };
@@ -46,7 +54,7 @@ export const useTodoStore = create<TodoStore>()((set, get) => ({
     fetch('/api/todos', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: newTodo.id, title, category, priority: 'none', order: newTodo.order }),
+      body: JSON.stringify({ id: newTodo.id, title, category, priority: 'none', label: 'none', order: newTodo.order }),
     }).catch(() => {});
   },
 
@@ -85,6 +93,17 @@ export const useTodoStore = create<TodoStore>()((set, get) => ({
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ priority }),
+    }).catch(() => {});
+  },
+
+  setLabel: (id, label) => {
+    set((state) => ({
+      todos: state.todos.map((t) => (t.id === id ? { ...t, label } : t)),
+    }));
+    fetch(`/api/todos/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ label }),
     }).catch(() => {});
   },
 

@@ -19,8 +19,8 @@ import {
   arrayMove,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Plus, Trash2, Check, RefreshCw, Calendar, ClipboardList, CheckCircle2, Pencil, GripVertical, Flag, Package } from 'lucide-react';
-import { useTodoStore, type TodoCategory, type TodoPriority, type Todo } from '@/store/todoStore';
+import { Plus, Trash2, Check, RefreshCw, Calendar, ClipboardList, CheckCircle2, Pencil, GripVertical, Flag, Package, CalendarDays, Tag } from 'lucide-react';
+import { useTodoStore, type TodoCategory, type TodoPriority, type TodoLabel, type Todo } from '@/store/todoStore';
 import { useUIStore } from '@/store/uiStore';
 import { useProjectStore } from '@/store/projectStore';
 import { Header } from '@/components/layout/Header';
@@ -34,6 +34,20 @@ const PRIORITY_OPTIONS: { value: TodoPriority; label: string; color: string; bor
   { value: 'low',    label: 'Laag',   color: 'text-sky-400',   border: 'border-l-sky-400',     bg: 'bg-sky-400'      },
   { value: 'medium', label: 'Middel', color: 'text-amber-400', border: 'border-l-amber-400',   bg: 'bg-amber-400'    },
   { value: 'high',   label: 'Hoog',   color: 'text-red-500',   border: 'border-l-red-500',     bg: 'bg-red-500'      },
+];
+
+const LABEL_OPTIONS: {
+  value: TodoLabel;
+  label: string;
+  emoji: string;
+  pill: string;
+  pillText: string;
+  cardBg: string;
+}[] = [
+  { value: 'none',         label: 'Geen label',   emoji: '',   pill: 'bg-gray-100 text-gray-400',         pillText: '',          cardBg: ''                    },
+  { value: 'groei',        label: 'Groei',         emoji: '🌱', pill: 'bg-emerald-100 text-emerald-700',   pillText: 'Groei',     cardBg: 'bg-emerald-50/40'    },
+  { value: 'onderhoud',    label: 'Onderhoud',     emoji: '🔧', pill: 'bg-orange-100 text-orange-700',     pillText: 'Onderhoud', cardBg: 'bg-orange-50/40'     },
+  { value: 'operationeel', label: 'Operationeel',  emoji: '⚡', pill: 'bg-red-100 text-red-700',           pillText: 'Operatie.', cardBg: 'bg-red-50/40'        },
 ];
 
 const COLUMNS: {
@@ -82,6 +96,15 @@ const COLUMNS: {
     empty: 'Geen doorlopende taken',
   },
   {
+    key: 'deze_maand',
+    label: 'Deze maand',
+    icon: <CalendarDays size={16} />,
+    accent: 'text-violet-700',
+    headerBg: 'bg-violet-50 border-violet-200',
+    countBg: 'bg-violet-100 text-violet-700',
+    empty: 'Niets gepland deze maand',
+  },
+  {
     key: 'done',
     label: 'Done',
     icon: <CheckCircle2 size={16} />,
@@ -96,7 +119,7 @@ export default function TodoPage() {
   const router = useRouter();
   const { currentUserId } = useUIStore();
   const { activeProjectId } = useProjectStore();
-  const { todos, addTodo, deleteTodo, editTodo, setPriority, commitReorder, moveTodo } = useTodoStore();
+  const { todos, addTodo, deleteTodo, editTodo, setPriority, setLabel, commitReorder, moveTodo } = useTodoStore();
 
   const [previewTodos, setPreviewTodos] = useState<Todo[] | null>(null);
   const originalRef = useRef<Todo[]>([]);
@@ -186,7 +209,7 @@ export default function TodoPage() {
           onDragOver={handleDragOver}
           onDragEnd={handleDragEnd}
         >
-          <div className="grid grid-cols-5 gap-4 h-full">
+          <div className="grid grid-cols-6 gap-4 h-full">
             {COLUMNS.map((col) => {
               const colTodos = displayTodos.filter((t) => t.category === col.key);
               return (
@@ -199,6 +222,7 @@ export default function TodoPage() {
                   onDelete={(id) => deleteTodo(id)}
                   onEdit={(id, title) => editTodo(id, title)}
                   onChangePriority={(id, p) => setPriority(id, p)}
+                  onChangeLabel={(id, l) => setLabel(id, l)}
                   onToggleDone={(id, currentCategory) =>
                     moveTodo(id, currentCategory === 'done' ? 'todo' : 'done')
                   }
@@ -229,6 +253,7 @@ function DroppableColumn({
   onDelete,
   onEdit,
   onChangePriority,
+  onChangeLabel,
   onToggleDone,
 }: {
   column: (typeof COLUMNS)[number];
@@ -238,6 +263,7 @@ function DroppableColumn({
   onDelete: (id: string) => void;
   onEdit: (id: string, title: string) => void;
   onChangePriority: (id: string, p: TodoPriority) => void;
+  onChangeLabel: (id: string, l: TodoLabel) => void;
   onToggleDone: (id: string, currentCategory: TodoCategory) => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: column.key });
@@ -287,6 +313,7 @@ function DroppableColumn({
               onDelete={() => onDelete(todo.id)}
               onEdit={(title) => onEdit(todo.id, title)}
               onChangePriority={(p) => onChangePriority(todo.id, p)}
+              onChangeLabel={(l) => onChangeLabel(todo.id, l)}
               onToggleDone={() => onToggleDone(todo.id, todo.category)}
             />
           ))}
@@ -335,6 +362,7 @@ function SortableTodoCard({
   onDelete,
   onEdit,
   onChangePriority,
+  onChangeLabel,
   onToggleDone,
 }: {
   todo: Todo;
@@ -343,15 +371,18 @@ function SortableTodoCard({
   onDelete: () => void;
   onEdit: (title: string) => void;
   onChangePriority: (p: TodoPriority) => void;
+  onChangeLabel: (l: TodoLabel) => void;
   onToggleDone: () => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: todo.id });
   const [editing, setEditing] = useState(false);
   const [editVal, setEditVal] = useState(todo.title);
   const [showPriorityMenu, setShowPriorityMenu] = useState(false);
+  const [showLabelMenu, setShowLabelMenu] = useState(false);
 
   const style: React.CSSProperties = { transform: CSS.Transform.toString(transform), transition };
   const priorityMeta = PRIORITY_OPTIONS.find((p) => p.value === (todo.priority ?? 'none'))!;
+  const labelMeta = LABEL_OPTIONS.find((l) => l.value === (todo.label ?? 'none'))!;
 
   const handleEditSave = () => {
     if (editVal.trim()) onEdit(editVal.trim());
@@ -364,111 +395,163 @@ function SortableTodoCard({
       ref={setNodeRef}
       style={style}
       className={cn(
-        'group relative flex items-start gap-2 pl-2 pr-2 py-2.5 rounded-lg border-l-2 border border-transparent transition-all hover:border-gray-200 hover:bg-gray-50',
+        'group relative rounded-lg border-l-2 border border-transparent transition-all hover:border-gray-200',
         priorityMeta.border,
+        !isDone && labelMeta.value !== 'none' && labelMeta.cardBg,
         isDone && 'opacity-50',
         isDragging && 'opacity-30 bg-gray-50 border-gray-200',
       )}
     >
-      {/* Drag handle */}
-      <button
-        {...listeners}
-        {...attributes}
-        tabIndex={-1}
-        className="mt-0.5 flex-shrink-0 cursor-grab active:cursor-grabbing text-gray-200 hover:text-gray-400 transition-colors opacity-0 group-hover:opacity-100"
-      >
-        <GripVertical size={13} />
-      </button>
-
-      {/* Checkbox */}
-      <button
-        onClick={(e) => { e.stopPropagation(); onToggleDone(); }}
-        className={cn(
-          'mt-0.5 h-4 w-4 rounded border flex items-center justify-center flex-shrink-0 transition-all duration-150 cursor-pointer hover:scale-110',
-          isDone
-            ? 'bg-emerald-500 border-emerald-500 text-white'
-            : 'border-gray-300 hover:border-emerald-400 hover:bg-emerald-50',
-        )}
-      >
-        {isDone && <Check size={10} />}
-      </button>
-
-      {/* Title */}
-      {editing ? (
-        <input
-          autoFocus
-          value={editVal}
-          onChange={(e) => setEditVal(e.target.value)}
-          onBlur={handleEditSave}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') handleEditSave();
-            if (e.key === 'Escape') { setEditVal(todo.title); setEditing(false); }
-          }}
-          className="flex-1 text-sm bg-transparent border-b border-indigo-300 outline-none pb-0.5 text-gray-800"
-        />
-      ) : (
-        <span
-          className={cn('flex-1 text-sm text-gray-800 leading-snug cursor-text select-none', isDone && 'line-through text-gray-400')}
-          onDoubleClick={() => { setEditing(true); setEditVal(todo.title); }}
-        >
-          {todo.title}
-        </span>
+      {/* Label badge row — only shown when a label is set */}
+      {labelMeta.value !== 'none' && !isDone && (
+        <div className="px-2 pt-1.5 pb-0">
+          <span className={cn('inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold', labelMeta.pill)}>
+            <span>{labelMeta.emoji}</span>
+            {labelMeta.label}
+          </span>
+        </div>
       )}
 
-      {/* Right actions */}
-      <div className="flex items-center gap-0.5 flex-shrink-0 mt-0.5">
-        {/* Priority button — always visible when set, otherwise on hover */}
-        <div className="relative">
-          <button
-            onClick={(e) => { e.stopPropagation(); setShowPriorityMenu((v) => !v); }}
-            title={`Prioriteit: ${priorityMeta.label}`}
-            className={cn(
-              'h-6 w-6 flex items-center justify-center rounded transition-colors',
-              todo.priority !== 'none'
-                ? priorityMeta.color
-                : 'text-gray-200 opacity-0 group-hover:opacity-100 hover:text-gray-400',
-            )}
-          >
-            <Flag size={11} />
-          </button>
-
-          {showPriorityMenu && (
-            <>
-              <div className="fixed inset-0 z-40" onClick={() => setShowPriorityMenu(false)} />
-              <div className="absolute right-0 top-7 z-50 w-32 bg-white border border-gray-200 rounded-xl shadow-lg py-1 overflow-hidden">
-                {PRIORITY_OPTIONS.map((opt) => (
-                  <button
-                    key={opt.value}
-                    onClick={() => { onChangePriority(opt.value); setShowPriorityMenu(false); }}
-                    className={cn(
-                      'w-full flex items-center gap-2.5 px-3 py-2 text-xs hover:bg-gray-50 transition-colors text-left',
-                      todo.priority === opt.value && 'bg-gray-50 font-semibold',
-                    )}
-                  >
-                    <span className={cn('h-2 w-2 rounded-full flex-shrink-0', opt.value === 'none' ? 'bg-gray-200' : opt.bg)} />
-                    <span className="text-gray-700">{opt.label}</span>
-                    {todo.priority === opt.value && <Check size={10} className="ml-auto text-indigo-500" />}
-                  </button>
-                ))}
-              </div>
-            </>
-          )}
-        </div>
-
-        {!editing && (
-          <button
-            onClick={() => { setEditing(true); setEditVal(todo.title); }}
-            className="h-6 w-6 flex items-center justify-center rounded text-gray-200 hover:text-gray-600 transition-colors opacity-0 group-hover:opacity-100"
-          >
-            <Pencil size={11} />
-          </button>
-        )}
+      {/* Main row */}
+      <div className="flex items-start gap-2 px-2 py-2">
+        {/* Drag handle */}
         <button
-          onClick={onDelete}
-          className="h-6 w-6 flex items-center justify-center rounded text-gray-200 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
+          {...listeners}
+          {...attributes}
+          tabIndex={-1}
+          className="mt-0.5 flex-shrink-0 cursor-grab active:cursor-grabbing text-gray-200 hover:text-gray-400 transition-colors opacity-0 group-hover:opacity-100"
         >
-          <Trash2 size={11} />
+          <GripVertical size={13} />
         </button>
+
+        {/* Checkbox */}
+        <button
+          onClick={(e) => { e.stopPropagation(); onToggleDone(); }}
+          className={cn(
+            'mt-0.5 h-4 w-4 rounded border flex items-center justify-center flex-shrink-0 transition-all duration-150 cursor-pointer hover:scale-110',
+            isDone
+              ? 'bg-emerald-500 border-emerald-500 text-white'
+              : 'border-gray-300 hover:border-emerald-400 hover:bg-emerald-50',
+          )}
+        >
+          {isDone && <Check size={10} />}
+        </button>
+
+        {/* Title */}
+        {editing ? (
+          <input
+            autoFocus
+            value={editVal}
+            onChange={(e) => setEditVal(e.target.value)}
+            onBlur={handleEditSave}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') handleEditSave();
+              if (e.key === 'Escape') { setEditVal(todo.title); setEditing(false); }
+            }}
+            className="flex-1 text-sm bg-transparent border-b border-indigo-300 outline-none pb-0.5 text-gray-800"
+          />
+        ) : (
+          <span
+            className={cn('flex-1 text-sm text-gray-800 leading-snug cursor-text select-none', isDone && 'line-through text-gray-400')}
+            onDoubleClick={() => { setEditing(true); setEditVal(todo.title); }}
+          >
+            {todo.title}
+          </span>
+        )}
+
+        {/* Right actions */}
+        <div className="flex items-center gap-0.5 flex-shrink-0 mt-0.5">
+          {/* Label button */}
+          <div className="relative">
+            <button
+              onClick={(e) => { e.stopPropagation(); setShowLabelMenu((v) => !v); setShowPriorityMenu(false); }}
+              title={`Label: ${labelMeta.label}`}
+              className={cn(
+                'h-6 w-6 flex items-center justify-center rounded transition-colors text-xs',
+                labelMeta.value !== 'none'
+                  ? labelMeta.pill
+                  : 'text-gray-200 opacity-0 group-hover:opacity-100 hover:text-gray-400',
+              )}
+            >
+              <Tag size={11} />
+            </button>
+
+            {showLabelMenu && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setShowLabelMenu(false)} />
+                <div className="absolute right-0 top-7 z-50 w-36 bg-white border border-gray-200 rounded-xl shadow-lg py-1 overflow-hidden">
+                  {LABEL_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.value}
+                      onClick={() => { onChangeLabel(opt.value); setShowLabelMenu(false); }}
+                      className={cn(
+                        'w-full flex items-center gap-2.5 px-3 py-2 text-xs hover:bg-gray-50 transition-colors text-left',
+                        todo.label === opt.value && 'bg-gray-50 font-semibold',
+                      )}
+                    >
+                      <span className="text-sm">{opt.emoji || '○'}</span>
+                      <span className="text-gray-700">{opt.label}</span>
+                      {todo.label === opt.value && <Check size={10} className="ml-auto text-indigo-500" />}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Priority button */}
+          <div className="relative">
+            <button
+              onClick={(e) => { e.stopPropagation(); setShowPriorityMenu((v) => !v); setShowLabelMenu(false); }}
+              title={`Prioriteit: ${priorityMeta.label}`}
+              className={cn(
+                'h-6 w-6 flex items-center justify-center rounded transition-colors',
+                todo.priority !== 'none'
+                  ? priorityMeta.color
+                  : 'text-gray-200 opacity-0 group-hover:opacity-100 hover:text-gray-400',
+              )}
+            >
+              <Flag size={11} />
+            </button>
+
+            {showPriorityMenu && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setShowPriorityMenu(false)} />
+                <div className="absolute right-0 top-7 z-50 w-32 bg-white border border-gray-200 rounded-xl shadow-lg py-1 overflow-hidden">
+                  {PRIORITY_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.value}
+                      onClick={() => { onChangePriority(opt.value); setShowPriorityMenu(false); }}
+                      className={cn(
+                        'w-full flex items-center gap-2.5 px-3 py-2 text-xs hover:bg-gray-50 transition-colors text-left',
+                        todo.priority === opt.value && 'bg-gray-50 font-semibold',
+                      )}
+                    >
+                      <span className={cn('h-2 w-2 rounded-full flex-shrink-0', opt.value === 'none' ? 'bg-gray-200' : opt.bg)} />
+                      <span className="text-gray-700">{opt.label}</span>
+                      {todo.priority === opt.value && <Check size={10} className="ml-auto text-indigo-500" />}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+
+          {!editing && (
+            <button
+              onClick={() => { setEditing(true); setEditVal(todo.title); }}
+              className="h-6 w-6 flex items-center justify-center rounded text-gray-200 hover:text-gray-600 transition-colors opacity-0 group-hover:opacity-100"
+            >
+              <Pencil size={11} />
+            </button>
+          )}
+          <button
+            onClick={onDelete}
+            className="h-6 w-6 flex items-center justify-center rounded text-gray-200 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
+          >
+            <Trash2 size={11} />
+          </button>
+        </div>
       </div>
     </div>
   );

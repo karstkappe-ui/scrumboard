@@ -8,7 +8,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const userId = (session.user as { id: string }).id;
-  const { title, category, order, priority } = await req.json();
+  const { title, category, order, priority, label } = await req.json();
 
   if (title !== undefined) {
     await prisma.$executeRaw`
@@ -39,6 +39,12 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   if (priority !== undefined) {
     await prisma.$executeRaw`
       UPDATE "Todo" SET "priority" = ${priority}, "updatedAt" = NOW()
+      WHERE "id" = ${params.id} AND "userId" = ${userId}
+    `;
+  }
+  if (label !== undefined) {
+    await prisma.$executeRaw`
+      UPDATE "Todo" SET "label" = ${label}, "updatedAt" = NOW()
       WHERE "id" = ${params.id} AND "userId" = ${userId}
     `;
   }

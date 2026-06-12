@@ -23,12 +23,15 @@ export interface BoekEntry {
 
 interface BoekStore {
   entries: BoekEntry[];
+  customCategories: string[];
   addEntry: (entry: Omit<BoekEntry, 'id' | 'createdAt'>) => void;
   updateEntry: (id: string, updates: Partial<Omit<BoekEntry, 'id' | 'createdAt'>>) => void;
   deleteEntry: (id: string) => void;
+  addCategory: (name: string) => void;
+  deleteCategory: (name: string) => void;
 }
 
-const SEED: BoekEntry[] = [
+const SEED_ENTRIES: BoekEntry[] = [
   {
     id: 'boek-seed-1',
     title: 'Wegenbelasting (privé betaald)',
@@ -71,10 +74,13 @@ const SEED: BoekEntry[] = [
   },
 ];
 
+const SEED_CATEGORIES = ['Vergeet niet! 🔔', 'Reiskosten', 'Vaste lasten', 'Representatie'];
+
 export const useBoekStore = create<BoekStore>()(
   persist(
     (set, get) => ({
-      entries: SEED,
+      entries: SEED_ENTRIES,
+      customCategories: SEED_CATEGORIES,
 
       addEntry: (entry) =>
         set((state) => ({
@@ -82,15 +88,38 @@ export const useBoekStore = create<BoekStore>()(
             ...state.entries,
             { ...entry, id: generateId(), createdAt: new Date().toISOString() },
           ],
+          // also ensure the category exists
+          customCategories: state.customCategories.includes(entry.category)
+            ? state.customCategories
+            : [...state.customCategories, entry.category],
         })),
 
       updateEntry: (id, updates) =>
-        set((state) => ({
-          entries: state.entries.map((e) => (e.id === id ? { ...e, ...updates } : e)),
-        })),
+        set((state) => {
+          const newEntries = state.entries.map((e) => (e.id === id ? { ...e, ...updates } : e));
+          const usedCats = new Set(newEntries.map((e) => e.category));
+          const newCats = state.customCategories.includes(updates.category ?? '')
+            ? state.customCategories
+            : updates.category
+            ? [...state.customCategories, updates.category]
+            : state.customCategories;
+          return { entries: newEntries, customCategories: newCats };
+        }),
 
       deleteEntry: (id) =>
         set((state) => ({ entries: state.entries.filter((e) => e.id !== id) })),
+
+      addCategory: (name) =>
+        set((state) => ({
+          customCategories: state.customCategories.includes(name)
+            ? state.customCategories
+            : [...state.customCategories, name],
+        })),
+
+      deleteCategory: (name) =>
+        set((state) => ({
+          customCategories: state.customCategories.filter((c) => c !== name),
+        })),
     }),
     { name: 'boek-store' },
   ),

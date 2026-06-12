@@ -85,9 +85,7 @@ export default function BoekhoudingPage() {
     if (currentUserId && !isAuthorized) router.replace('/');
   }, [currentUserId, isAuthorized, router]);
 
-  if (!currentUserId || !isAuthorized) return null;
-
-  /* ---- derived data ---- */
+  /* ---- derived data (hooks must be before early return) ---- */
   const categories = useMemo(() => {
     const seen = new Map<string, number>();
     for (const e of entries) {
@@ -104,9 +102,21 @@ export default function BoekhoudingPage() {
     return map;
   }, [categories]);
 
-  const filtered = selectedCat
-    ? entries.filter((e) => e.category === selectedCat)
-    : entries;
+  const filtered = useMemo(
+    () => (selectedCat ? entries.filter((e) => e.category === selectedCat) : entries),
+    [selectedCat, entries],
+  );
+
+  const grouped = useMemo(() => {
+    const map = new Map<string, BoekEntry[]>();
+    for (const e of filtered) {
+      if (!map.has(e.category)) map.set(e.category, []);
+      map.get(e.category)!.push(e);
+    }
+    return map;
+  }, [filtered]);
+
+  if (!currentUserId || !isAuthorized) return null;
 
   function openCreate() {
     setEditEntry(null);
@@ -123,16 +133,6 @@ export default function BoekhoudingPage() {
     setExpandedId(null);
     deleteEntry(id);
   }
-
-  /* ---- group by category for display ---- */
-  const grouped = useMemo(() => {
-    const map = new Map<string, BoekEntry[]>();
-    for (const e of filtered) {
-      if (!map.has(e.category)) map.set(e.category, []);
-      map.get(e.category)!.push(e);
-    }
-    return map;
-  }, [filtered]);
 
   return (
     <div className="flex flex-col h-full overflow-hidden">

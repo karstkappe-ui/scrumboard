@@ -16,6 +16,7 @@ import {
   CalendarDays,
   Camera,
   Handshake,
+  BookOpen,
   X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -63,8 +64,9 @@ export function Sidebar() {
   const navItems = [
     ...BASE_NAV_ITEMS,
     ...(showMijnTaken ? [
-      { href: '/todo', label: 'Mijn taken', icon: CheckSquare },
-      { href: '/ugc',  label: 'UGC Planning', icon: Camera },
+      { href: '/todo',        label: 'Mijn taken',   icon: CheckSquare },
+      { href: '/ugc',         label: 'UGC Planning', icon: Camera      },
+      { href: '/boekhouding', label: 'Boekhouding',  icon: BookOpen    },
     ] : []),
     ...(showDeals ? [
       { href: '/deals', label: 'Deals', icon: Handshake },

@@ -39,6 +39,7 @@ const BASE_NAV_ITEMS = [
 
 const NEWMATE_PROJECT_ID = 'proj-3';
 const ICEO_PROJECT_ID = 'proj-1';
+const PUREFILTER_PROJECT_ID = 'proj-4';
 const KARST_USER_ID = 'user-1';
 
 export function Sidebar() {
@@ -58,13 +59,18 @@ export function Sidebar() {
     closeSidebar();
   }, [pathname, closeSidebar]);
 
-  const showMijnTaken = currentUserId === KARST_USER_ID && activeProjectId === NEWMATE_PROJECT_ID;
-  const showDeals = currentUserId === KARST_USER_ID && activeProjectId === ICEO_PROJECT_ID;
+  const isKarst = currentUserId === KARST_USER_ID;
+  const showMijnTaken =
+    isKarst && (activeProjectId === NEWMATE_PROJECT_ID || activeProjectId === PUREFILTER_PROJECT_ID);
+  const showNewMateTools = isKarst && activeProjectId === NEWMATE_PROJECT_ID;
+  const showDeals = isKarst && activeProjectId === ICEO_PROJECT_ID;
 
   const navItems = [
     ...BASE_NAV_ITEMS,
     ...(showMijnTaken ? [
       { href: '/todo',        label: 'Mijn taken',   icon: CheckSquare },
+    ] : []),
+    ...(showNewMateTools ? [
       { href: '/ugc',         label: 'UGC Planning', icon: Camera      },
       { href: '/boekhouding', label: 'Boekhouding',  icon: BookOpen    },
     ] : []),

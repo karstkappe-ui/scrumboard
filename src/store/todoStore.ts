@@ -11,6 +11,7 @@ export interface Todo {
   category: TodoCategory;
   priority: TodoPriority;
   label: TodoLabel;
+  projectId: string;
   order: number;
   createdAt: string;
 }
@@ -18,7 +19,7 @@ export interface Todo {
 interface TodoStore {
   todos: Todo[];
   _hydrate: (todos: Todo[]) => void;
-  addTodo: (title: string, category: TodoCategory) => void;
+  addTodo: (title: string, category: TodoCategory, projectId: string) => void;
   deleteTodo: (id: string) => void;
   moveTodo: (id: string, category: TodoCategory) => void;
   editTodo: (id: string, title: string) => void;
@@ -39,7 +40,7 @@ export const useTodoStore = create<TodoStore>()((set, get) => ({
       })),
     }),
 
-  addTodo: (title, category) => {
+  addTodo: (title, category, projectId) => {
     const todos = get().todos;
     const newTodo: Todo = {
       id: generateId(),
@@ -47,6 +48,7 @@ export const useTodoStore = create<TodoStore>()((set, get) => ({
       category,
       priority: 'none',
       label: 'none',
+      projectId,
       order: todos.filter((t) => t.category === category).length,
       createdAt: new Date().toISOString(),
     };
@@ -54,7 +56,15 @@ export const useTodoStore = create<TodoStore>()((set, get) => ({
     fetch('/api/todos', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: newTodo.id, title, category, priority: 'none', label: 'none', order: newTodo.order }),
+      body: JSON.stringify({
+        id: newTodo.id,
+        title,
+        category,
+        priority: 'none',
+        label: 'none',
+        projectId,
+        order: newTodo.order,
+      }),
     }).catch(() => {});
   },
 

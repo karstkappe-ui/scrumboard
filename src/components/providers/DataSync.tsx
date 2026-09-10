@@ -20,7 +20,7 @@ export function DataSync({ children }: { children: React.ReactNode }) {
   const { data: session, status } = useSession();
   const { _hydrate: hydrateIssues } = useIssueStore();
   const { _hydrate: hydrateSprints } = useSprintStore();
-  const { _hydrate: hydrateProjects } = useProjectStore();
+  const { _hydrate: hydrateProjects, activeProjectId } = useProjectStore();
   const { _hydrate: hydrateTodos } = useTodoStore();
   const { setCurrentUserId } = useUIStore();
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -36,7 +36,7 @@ export function DataSync({ children }: { children: React.ReactNode }) {
     try {
       const [syncRes, todosRes] = await Promise.all([
         fetch('/api/sync'),
-        fetch('/api/todos'),
+        fetch(`/api/todos?projectId=${encodeURIComponent(activeProjectId)}`),
       ]);
       if (syncRes.ok) {
         const data: SyncData = await syncRes.json();
@@ -64,8 +64,10 @@ export function DataSync({ children }: { children: React.ReactNode }) {
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
+  // activeProjectId is a dependency so switching projects reloads the todos,
+  // which are scoped per project, straight away instead of one tick later.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [status]);
+  }, [status, activeProjectId]);
 
   return <>{children}</>;
 }

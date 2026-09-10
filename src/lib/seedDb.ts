@@ -8,6 +8,27 @@ import {
   SEED_COMMENTS, SEED_ACTIVITY,
 } from '@/data/seed';
 
+// Creates any seed project that is not in the database yet. Safe to call on a
+// populated database: existing projects are left untouched.
+export async function seedProjects() {
+  for (const p of SEED_PROJECTS) {
+    await prisma.project.upsert({
+      where: { id: p.id },
+      update: {},
+      create: {
+        id: p.id,
+        name: p.name,
+        key: p.key,
+        description: p.description,
+        color: p.color,
+        emoji: p.emoji,
+        createdAt: new Date(p.createdAt),
+        updatedAt: new Date(p.updatedAt),
+      },
+    });
+  }
+}
+
 export async function seedDatabase() {
   const hash = await bcrypt.hash('scrumboard2026', 10);
 
@@ -29,22 +50,7 @@ export async function seedDatabase() {
   }
 
   // Projects
-  for (const p of SEED_PROJECTS) {
-    await prisma.project.upsert({
-      where: { id: p.id },
-      update: {},
-      create: {
-        id: p.id,
-        name: p.name,
-        key: p.key,
-        description: p.description,
-        color: p.color,
-        emoji: p.emoji,
-        createdAt: new Date(p.createdAt),
-        updatedAt: new Date(p.updatedAt),
-      },
-    });
-  }
+  await seedProjects();
 
   // Sprints
   const allSprints = [...SEED_SPRINTS, ...SEED_SPRINTS_PURE, ...SEED_SPRINTS_NMATE];

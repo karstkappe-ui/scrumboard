@@ -2,7 +2,8 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/db';
-import { seedDatabase } from '@/lib/seedDb';
+import { seedDatabase, seedProjects } from '@/lib/seedDb';
+import { SEED_PROJECTS } from '@/data/projects';
 
 export async function GET() {
   const session = await getServerSession(authOptions);
@@ -12,6 +13,9 @@ export async function GET() {
     const count = await prisma.project.count();
     if (count === 0) {
       await seedDatabase();
+    } else if (count < SEED_PROJECTS.length) {
+      // A project was added to the seed data after this database was created.
+      await seedProjects();
     }
 
     const [projects, sprints, issues, comments, activity] = await Promise.all([

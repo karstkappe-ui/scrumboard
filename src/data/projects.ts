@@ -31,4 +31,14 @@ export const SEED_PROJECTS: Project[] = [
     createdAt: '2026-04-01T09:00:00Z',
     updatedAt: '2026-04-01T09:00:00Z',
   },
+  {
+    id: 'proj-4',
+    name: 'Purefilter',
+    key: 'PFILT',
+    description: 'Geavanceerde waterzuiveringssystemen voor huishoudelijk en zakelijk gebruik.',
+    color: '#06B6D4',
+    emoji: '💧✨',
+    createdAt: '2026-09-10T09:00:00Z',
+    updatedAt: '2026-09-10T09:00:00Z',
+  },
 ];

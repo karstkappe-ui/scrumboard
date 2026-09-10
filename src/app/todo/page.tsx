@@ -26,8 +26,10 @@ import { useProjectStore } from '@/store/projectStore';
 import { Header } from '@/components/layout/Header';
 import { cn } from '@/lib/utils';
 
-const NEWMATE_PROJECT_ID = 'proj-3';
 const KARST_USER_ID = 'user-1';
+// Projects that have a personal todo board. Todos are stored per project, so
+// each of these keeps its own set of cards.
+const TODO_PROJECT_IDS = ['proj-3', 'proj-4'];
 
 const PRIORITY_OPTIONS: { value: TodoPriority; label: string; color: string; border: string; bg: string }[] = [
   { value: 'none',   label: 'Geen',   color: 'text-gray-300',  border: 'border-l-transparent', bg: 'bg-transparent'  },
@@ -129,7 +131,8 @@ export default function TodoPage() {
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
   );
 
-  const isAuthorized = currentUserId === KARST_USER_ID && activeProjectId === NEWMATE_PROJECT_ID;
+  const isAuthorized =
+    currentUserId === KARST_USER_ID && TODO_PROJECT_IDS.includes(activeProjectId);
 
   useEffect(() => {
     if (currentUserId && !isAuthorized) {
@@ -218,7 +221,7 @@ export default function TodoPage() {
                   column={col}
                   todos={colTodos}
                   draggedId={activeId}
-                  onAdd={(title) => addTodo(title, col.key)}
+                  onAdd={(title) => addTodo(title, col.key, activeProjectId)}
                   onDelete={(id) => deleteTodo(id)}
                   onEdit={(id, title) => editTodo(id, title)}
                   onChangePriority={(id, p) => setPriority(id, p)}

@@ -19,7 +19,7 @@ import {
   arrayMove,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Plus, Trash2, Check, RefreshCw, Calendar, ClipboardList, CheckCircle2, Pencil, GripVertical, Flag, Package, CalendarDays, Tag } from 'lucide-react';
+import { Plus, Trash2, Check, Calendar, ClipboardList, CheckCircle2, Pencil, GripVertical, Flag, Package, Tag } from 'lucide-react';
 import { useTodoStore, type TodoCategory, type TodoPriority, type TodoLabel, type Todo } from '@/store/todoStore';
 import { useUIStore } from '@/store/uiStore';
 import { useProjectStore } from '@/store/projectStore';
@@ -89,24 +89,6 @@ const COLUMNS: {
     empty: 'Niets gepland voor vandaag',
   },
   {
-    key: 'recurring',
-    label: 'Doorlopend',
-    icon: <RefreshCw size={16} />,
-    accent: 'text-blue-700',
-    headerBg: 'bg-blue-50 border-blue-200',
-    countBg: 'bg-blue-100 text-blue-700',
-    empty: 'Geen doorlopende taken',
-  },
-  {
-    key: 'deze_maand',
-    label: 'Deze maand',
-    icon: <CalendarDays size={16} />,
-    accent: 'text-violet-700',
-    headerBg: 'bg-violet-50 border-violet-200',
-    countBg: 'bg-violet-100 text-violet-700',
-    empty: 'Niets gepland deze maand',
-  },
-  {
     key: 'done',
     label: 'Done',
     icon: <CheckCircle2 size={16} />,
@@ -126,6 +108,7 @@ export default function TodoPage() {
   const [previewTodos, setPreviewTodos] = useState<Todo[] | null>(null);
   const originalRef = useRef<Todo[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [labelFilter, setLabelFilter] = useState<TodoLabel | 'all'>('all');
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -143,8 +126,15 @@ export default function TodoPage() {
   // While loading or unauthorized, render nothing
   if (!currentUserId || !isAuthorized) return null;
 
-  const displayTodos = previewTodos ?? todos;
+  const allTodos = previewTodos ?? todos;
+  const displayTodos =
+    labelFilter === 'all' ? allTodos : allTodos.filter((t) => t.label === labelFilter);
   const activeTodo = activeId ? displayTodos.find((t) => t.id === activeId) : null;
+
+  const filters = LABEL_OPTIONS.filter((o) => o.value !== 'none').map((o) => ({
+    ...o,
+    count: allTodos.filter((t) => t.label === o.value).length,
+  }));
 
   function handleDragStart(e: DragStartEvent) {
     setActiveId(e.active.id as string);
@@ -205,14 +195,47 @@ export default function TodoPage() {
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <Header title="Mijn taken" subtitle="Persoonlijk dagelijks overzicht" />
-      <div className="flex-1 overflow-hidden p-5">
+      <div className="flex-1 overflow-hidden p-5 flex flex-col gap-3">
+        {/* Label filter — narrows every column at once */}
+        <div className="flex items-center gap-1.5 flex-wrap flex-shrink-0">
+          <button
+            onClick={() => setLabelFilter('all')}
+            className={cn(
+              'px-2.5 py-1 rounded-full text-[11px] font-semibold transition-colors',
+              labelFilter === 'all'
+                ? 'bg-gray-800 text-white'
+                : 'bg-gray-100 text-gray-500 hover:bg-gray-200',
+            )}
+          >
+            Alles ({allTodos.length})
+          </button>
+          {filters.map((f) => (
+            <button
+              key={f.value}
+              onClick={() => setLabelFilter(labelFilter === f.value ? 'all' : f.value)}
+              className={cn(
+                'inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold transition-colors',
+                labelFilter === f.value
+                  ? f.pill
+                  : 'bg-gray-100 text-gray-500 hover:bg-gray-200',
+              )}
+            >
+              <span>{f.emoji}</span>
+              {f.label} ({f.count})
+            </button>
+          ))}
+        </div>
+
         <DndContext
           sensors={sensors}
           onDragStart={handleDragStart}
           onDragOver={handleDragOver}
           onDragEnd={handleDragEnd}
         >
-          <div className="grid grid-cols-6 gap-4 h-full">
+          <div
+            className="grid gap-4 flex-1 min-h-0"
+            style={{ gridTemplateColumns: `repeat(${COLUMNS.length}, minmax(0, 1fr))` }}
+          >
             {COLUMNS.map((col) => {
               const colTodos = displayTodos.filter((t) => t.category === col.key);
               return (

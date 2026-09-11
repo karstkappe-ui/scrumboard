@@ -11,16 +11,21 @@ let ensured: Promise<void> | null = null;
  */
 export function ensureTodoSchema(): Promise<void> {
   if (!ensured) {
-    ensured = prisma
-      .$executeRawUnsafe(
+    ensured = (async () => {
+      await prisma.$executeRawUnsafe(
         `ALTER TABLE "Todo" ADD COLUMN IF NOT EXISTS "projectId" TEXT NOT NULL DEFAULT 'proj-3'`,
-      )
-      .then(() => undefined)
-      .catch((err) => {
-        // Let the next request retry rather than caching the failure.
-        ensured = null;
-        throw err;
-      });
+      );
+      // Doorlopend and Deze maand were removed from the board. Fold anything
+      // still filed under them back into Nog te doen, so no card is left
+      // without a column to render in.
+      await prisma.$executeRawUnsafe(
+        `UPDATE "Todo" SET "category" = 'todo' WHERE "category" IN ('recurring', 'deze_maand')`,
+      );
+    })().catch((err) => {
+      // Let the next request retry rather than caching the failure.
+      ensured = null;
+      throw err;
+    });
   }
   return ensured;
 }

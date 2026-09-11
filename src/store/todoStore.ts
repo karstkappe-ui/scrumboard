@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { generateId } from '@/lib/utils';
 
-export type TodoCategory = 'nazendingen' | 'today' | 'todo' | 'recurring' | 'deze_maand' | 'done';
+export type TodoCategory = 'nazendingen' | 'today' | 'todo' | 'done';
 export type TodoPriority = 'none' | 'low' | 'medium' | 'high';
 export type TodoLabel = 'none' | 'groei' | 'onderhoud' | 'operationeel';
 
@@ -28,17 +28,40 @@ interface TodoStore {
   commitReorder: (newTodos: Todo[], originalTodos: Todo[]) => void;
 }
 
+// Writes that the server has not confirmed yet. The board polls every few
+// seconds, and a response that was already in flight when the user acted does
+// not contain their change, so applying it would visibly undo what they just
+// did. Hydration is skipped until the writes have landed.
+let pendingWrites = 0;
+
+function track(request: Promise<unknown>) {
+  pendingWrites += 1;
+  return request.catch(() => {}).finally(() => {
+    pendingWrites -= 1;
+  });
+}
+
+// Everything the board renders. Used to skip re-rendering on a poll that
+// brought back nothing new, which is the common case.
+function signature(todos: Todo[]) {
+  return todos
+    .map((t) => `${t.id} ${t.title} ${t.category} ${t.order} ${t.priority} ${t.label}`)
+    .join('');
+}
+
 export const useTodoStore = create<TodoStore>()((set, get) => ({
   todos: [],
 
-  _hydrate: (todos) =>
-    set({
-      todos: todos.map((t) => ({
-        ...t,
-        priority: (t.priority as TodoPriority) ?? 'none',
-        label: (t.label as TodoLabel) ?? 'none',
-      })),
-    }),
+  _hydrate: (todos) => {
+    if (pendingWrites > 0) return;
+    const next = todos.map((t) => ({
+      ...t,
+      priority: (t.priority as TodoPriority) ?? 'none',
+      label: (t.label as TodoLabel) ?? 'none',
+    }));
+    if (signature(next) === signature(get().todos)) return;
+    set({ todos: next });
+  },
 
   addTodo: (title, category, projectId) => {
     const todos = get().todos;
@@ -53,68 +76,78 @@ export const useTodoStore = create<TodoStore>()((set, get) => ({
       createdAt: new Date().toISOString(),
     };
     set((state) => ({ todos: [...state.todos, newTodo] }));
-    fetch('/api/todos', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        id: newTodo.id,
-        title,
-        category,
-        priority: 'none',
-        label: 'none',
-        projectId,
-        order: newTodo.order,
+    track(
+      fetch('/api/todos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: newTodo.id,
+          title,
+          category,
+          priority: 'none',
+          label: 'none',
+          projectId,
+          order: newTodo.order,
+        }),
       }),
-    }).catch(() => {});
+    );
   },
 
   deleteTodo: (id) => {
     set((state) => ({ todos: state.todos.filter((t) => t.id !== id) }));
-    fetch(`/api/todos/${id}`, { method: 'DELETE' }).catch(() => {});
+    track(fetch(`/api/todos/${id}`, { method: 'DELETE' }));
   },
 
   moveTodo: (id, category) => {
     set((state) => ({
       todos: state.todos.map((t) => (t.id === id ? { ...t, category } : t)),
     }));
-    fetch(`/api/todos/${id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ category }),
-    }).catch(() => {});
+    track(
+      fetch(`/api/todos/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ category }),
+      }),
+    );
   },
 
   editTodo: (id, title) => {
     set((state) => ({
       todos: state.todos.map((t) => (t.id === id ? { ...t, title } : t)),
     }));
-    fetch(`/api/todos/${id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title }),
-    }).catch(() => {});
+    track(
+      fetch(`/api/todos/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title }),
+      }),
+    );
   },
 
   setPriority: (id, priority) => {
     set((state) => ({
       todos: state.todos.map((t) => (t.id === id ? { ...t, priority } : t)),
     }));
-    fetch(`/api/todos/${id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ priority }),
-    }).catch(() => {});
+    track(
+      fetch(`/api/todos/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ priority }),
+      }),
+    );
   },
 
   setLabel: (id, label) => {
     set((state) => ({
       todos: state.todos.map((t) => (t.id === id ? { ...t, label } : t)),
     }));
-    fetch(`/api/todos/${id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ label }),
-    }).catch(() => {});
+    track(
+      fetch(`/api/todos/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ label }),
+      }),
+    );
   },
 
   commitReorder: (newTodos, originalTodos) => {
@@ -133,11 +166,13 @@ export const useTodoStore = create<TodoStore>()((set, get) => ({
     withOrders.forEach((t) => {
       const orig = originalTodos.find((o) => o.id === t.id);
       if (orig && (orig.category !== t.category || orig.order !== t.order)) {
-        fetch(`/api/todos/${t.id}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ category: t.category, order: t.order }),
-        }).catch(() => {});
+        track(
+          fetch(`/api/todos/${t.id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ category: t.category, order: t.order }),
+          }),
+        );
       }
     });
   },
